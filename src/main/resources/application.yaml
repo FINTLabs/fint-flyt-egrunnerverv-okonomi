@@ -1,0 +1,34 @@
+spring:
+  application:
+    name: flyt.egrunnerverv.okonomi
+
+  security:
+      oauth2:
+          client:
+              registration:
+                  visma:
+                      authorization-grant-type: client_credentials
+                      client-id: BYTT_MEG_UT
+                      client-secret: BYTT_MEG_UT
+              provider:
+                  visma:
+                      token-uri: https://integrationtest.enterprise-stag.visma.no/authz/api/oauth/token/
+
+visma:
+    base-url: ""
+    legacy-auth: ""
+    oauth:
+        client-id: ""
+        client-secret: ""
+        token-url: ""
+
+    company-by-organization:
+        novari-no: 29
+#        fylke-1: 284
+#        fylke-2: 38
+#        fylke-3: 932
+
+logging:
+    structured:
+        format:
+            console: ecs

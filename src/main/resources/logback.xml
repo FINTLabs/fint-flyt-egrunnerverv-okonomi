@@ -1,0 +1,28 @@
+<configuration scan="true">
+
+    <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+
+                <!-- Timestamp -->
+                <timestamp/>
+
+                <!-- Log level, thread, logger name -->
+                <logLevel/>
+                <threadName/>
+                <loggerName/>
+
+                <!-- Message -->
+                <message/>
+
+                <!-- Key/value pairs if you use structured logging -->
+                <arguments/>
+
+            </providers>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="JSON"/>
+    </root>
+</configuration>
