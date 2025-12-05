@@ -1,6 +1,7 @@
 package no.novari.flyt.egrunnerverv.okonomi.service
 
 import no.novari.flyt.egrunnerverv.okonomi.adapter.visma.service.VismaReskontroClient
+import no.novari.flyt.egrunnerverv.okonomi.exception.InvalidIdentifierException
 import no.novari.flyt.egrunnerverv.okonomi.model.enum.Organization
 import no.novari.flyt.egrunnerverv.okonomi.model.payload.GetOrCreateSupplier
 import org.springframework.stereotype.Service
@@ -30,9 +31,9 @@ class SupplierService(
 
     private fun getIdentifier(supplier: GetOrCreateSupplier): String {
         return when {
-            supplier.fodselsNummer.isNotBlank() -> supplier.fodselsNummer
-            supplier.orgId.isNotBlank() -> supplier.orgId
-            else -> throw IllegalArgumentException("Ukjent identifier: forventet fødselsnummer eller orgId")
+            !supplier.fodselsNummer.isNullOrBlank() -> supplier.fodselsNummer
+            !supplier.orgId.isNullOrBlank() -> supplier.orgId
+            else -> throw InvalidIdentifierException()
         }
     }
 }

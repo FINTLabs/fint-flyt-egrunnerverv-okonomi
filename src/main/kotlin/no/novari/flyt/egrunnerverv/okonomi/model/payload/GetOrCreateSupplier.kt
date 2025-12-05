@@ -1,24 +1,28 @@
 package no.novari.flyt.egrunnerverv.okonomi.model.payload
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import no.novari.flyt.egrunnerverv.okonomi.adapter.visma.logging.LogMasked
+import no.novari.flyt.egrunnerverv.okonomi.adapter.visma.logging.MaskType
 
 data class GetOrCreateSupplier(
     @get:JsonProperty("sys_id")
     val sysId: String,
-    val number: Long,
     @get:JsonProperty("u_fdselsnummer")
-    val fodselsNummer: String,
+    @LogMasked(type = MaskType.FULL)
+    val fodselsNummer: String? = null,
     @get:JsonProperty("u_orgid")
-    val orgId: String,
+    val orgId: String? = null,
+    @LogMasked(type = MaskType.KEEP_FIRST, first = 4)
     val name: String,
     @get:JsonProperty("u_kontonummer")
+    @LogMasked(type = MaskType.KEEP_LAST, last = 4)
     val kontoNummer: String,
+    @LogMasked(type = MaskType.KEEP_FIRST_AND_LAST, first = 2, last = 4)
     val street: String,
+    @LogMasked(type = MaskType.FULL)
     val zip: String,
+    @LogMasked(type = MaskType.FULL)
     val city: String,
-    val country: String,
-    @get:JsonProperty("mobile_phone")
-    val mobilePhone: String,
+    @LogMasked(type = MaskType.KEEP_FIRST_AND_LAST, first = 4, last = 8)
     val email: String,
-    val kommentar: String,
 )

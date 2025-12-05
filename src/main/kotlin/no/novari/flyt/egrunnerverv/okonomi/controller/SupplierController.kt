@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.RestController
 class SupplierController(
     private val supplierService: SupplierService,
 ) {
-    // TODO: Håndter feil bedre
     @PostMapping
     fun getOrCreateSupplier(
         // TODO: Valider request
@@ -29,9 +28,5 @@ class SupplierController(
 
         // Alltid returner "OK" uansett om leverandør ble opprettet eller oppdatert (om nødvendig)
         return ResponseEntity.ok().build()
-
-        // Ved feil:
-        // return ResponseEntity.badRequest().build()
-        // inkluder `error_code` og `error_message`
     }
 }

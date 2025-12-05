@@ -106,8 +106,8 @@ class SupplierMapper {
 
     private fun buildOrgNo(supplier: GetOrCreateSupplier): String {
         return when {
-            supplier.fodselsNummer.isNotBlank() -> supplier.fodselsNummer
-            supplier.orgId.isNotBlank() -> supplier.orgId
+            !supplier.fodselsNummer.isNullOrBlank() -> supplier.fodselsNummer
+            !supplier.orgId.isNullOrBlank() -> supplier.orgId
             else -> ""
         }
     }
