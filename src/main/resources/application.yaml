@@ -14,6 +14,18 @@ spring:
                   visma:
                       token-uri: https://integrationtest.enterprise-stag.visma.no/authz/api/oauth/token/
 
+  threads:
+    virtual:
+      enabled: true
+
+novari:
+  adapter:
+      supplier:
+          by-organization:
+              novari-no: visma
+#              fylke-1: visma
+#              fylke-2: xledger
+
 visma:
     base-url: ""
     legacy-auth: ""
@@ -22,7 +34,8 @@ visma:
         client-secret: ""
         token-url: ""
 
-    company-by-organization:
+    company:
+      by-organization:
         novari-no: 29
 #        fylke-1: 284
 #        fylke-2: 38
