@@ -24,11 +24,11 @@ class DefaultTenantGatewayResolverTest {
         val gateway = StubGateway()
         val resolver =
             DefaultTenantGatewayResolver(
-                props = TenantAdapterProperties(byOrganization = mapOf("novari-no" to "visma")),
+                props = TenantAdapterProperties(byTenant = mapOf("novari-no" to "visma")),
                 gateways = mapOf("visma" to gateway),
             )
 
-        val resolved = resolver.resolve(TenantId.NOVARI)
+        val resolved = resolver.resolve(TenantId("novari-no"))
 
         assertEquals(gateway, resolved)
     }
@@ -37,13 +37,13 @@ class DefaultTenantGatewayResolverTest {
     fun `resolve fails when mapping missing`() {
         val resolver =
             DefaultTenantGatewayResolver(
-                props = TenantAdapterProperties(byOrganization = emptyMap()),
+                props = TenantAdapterProperties(byTenant = emptyMap()),
                 gateways = emptyMap(),
             )
 
         val ex =
             assertFailsWith<NoAdapterMappingException> {
-                resolver.resolve(TenantId.NOVARI)
+                resolver.resolve(TenantId("novari-no"))
             }
         assertEquals("Ingen adapter mapping for novari-no", ex.message)
     }
@@ -52,13 +52,13 @@ class DefaultTenantGatewayResolverTest {
     fun `resolve fails when bean name not found`() {
         val resolver =
             DefaultTenantGatewayResolver(
-                props = TenantAdapterProperties(byOrganization = mapOf("novari-no" to "visma")),
+                props = TenantAdapterProperties(byTenant = mapOf("novari-no" to "visma")),
                 gateways = emptyMap(),
             )
 
         val ex =
             assertFailsWith<MissingGatewayBeanException> {
-                resolver.resolve(TenantId.NOVARI)
+                resolver.resolve(TenantId("novari-no"))
             }
         assertEquals("Ingen gateway bean med navn visma", ex.message)
     }

@@ -10,7 +10,7 @@ import no.novari.flyt.egrunnerverv.okonomi.domain.model.TenantId
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.config.VismaProperties
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.error.VismaCreateSupplierException
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.error.VismaGetSupplierException
-import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.error.VismaOrganizationToCompanyException
+import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.error.VismaTenantToCompanyException
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.mapper.SupplierMapper
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.model.SupplierType
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.model.VUXml
@@ -33,7 +33,7 @@ class VismaReskontroClient(
     ): Supplier? {
         logGetCustomerSupplierByIdentifier(supplierIdentity, tenantId)
 
-        val company = getCompanyFromOrganization(tenantId)
+        val company = getCompanyFromTenant(tenantId)
 
         val xmlResponse =
             restClient
@@ -60,19 +60,19 @@ class VismaReskontroClient(
             arguments =
                 arrayOf(
                     kv("supplierIdentity", supplierIdentity.toMaskedLogMap()),
-                    kv("organization", tenantId.id),
+                    kv("tenant", tenantId.id),
                 )
         }
     }
 
-    private fun getCompanyFromOrganization(tenantId: TenantId): String {
-        return props.company.byOrganization[tenantId.id]
+    private fun getCompanyFromTenant(tenantId: TenantId): String {
+        return props.company.byTenant[tenantId.id]
             ?: run {
                 logger.atWarn {
-                    message = "Fant ikke noe selskap for organisasjon"
-                    arguments = arrayOf(kv("organisasjon", tenantId))
+                    message = "Fant ikke noe selskap for tenant"
+                    arguments = arrayOf(kv("tenant", tenantId))
                 }
-                throw VismaOrganizationToCompanyException(tenantId)
+                throw VismaTenantToCompanyException(tenantId)
             }
     }
 
@@ -81,7 +81,7 @@ class VismaReskontroClient(
         supplierIdentity: SupplierIdentity,
         tenantId: TenantId,
     ) {
-        val company = getCompanyFromOrganization(tenantId)
+        val company = getCompanyFromTenant(tenantId)
         val supplierType = SupplierType.LEVERANDOR // FIXME: Bestemmes av hvert fylke
 
         val requestBody =
@@ -114,7 +114,7 @@ class VismaReskontroClient(
                         arrayOf(
                             kv("leverandør", supplier.toMaskedLogMap()),
                             kv("supplierIdentity", supplierIdentity.toMaskedLogMap()),
-                            kv("organization", tenantId.id),
+                            kv("tenant", tenantId.id),
                             kv("result", result),
                         )
                 }
@@ -127,7 +127,7 @@ class VismaReskontroClient(
                         arrayOf(
                             kv("leverandør", supplier.toMaskedLogMap()),
                             kv("supplierIdentity", supplierIdentity.toMaskedLogMap()),
-                            kv("organization", tenantId.id),
+                            kv("tenant", tenantId.id),
                             kv("result", result),
                         )
                 }
@@ -140,7 +140,7 @@ class VismaReskontroClient(
                         arrayOf(
                             kv("leverandør", supplier.toMaskedLogMap()),
                             kv("supplierIdentity", supplierIdentity.toMaskedLogMap()),
-                            kv("organization", tenantId.id),
+                            kv("tenant", tenantId.id),
                             kv("result", result),
                         )
                 }

@@ -68,7 +68,7 @@ class SupplierControllerTest
             mockMvc
                 .post("/api/v1/egrunnerverv/okonomi/supplier") {
                     contentType = MediaType.APPLICATION_JSON
-                    header("X-Organization", "novari-no")
+                    header("X-Tenant", "novari-no")
                     content = objectMapper.writeValueAsString(validRequest())
                 }.andExpect {
                     status { isOk() }
@@ -80,7 +80,7 @@ class SupplierControllerTest
             mockMvc
                 .post("/api/v1/egrunnerverv/okonomi/supplier") {
                     contentType = MediaType.APPLICATION_JSON
-                    header("X-Organization", "novari-no")
+                    header("X-Tenant", "novari-no")
                     content = objectMapper.writeValueAsString(validRequest(fnr = "", orgId = ""))
                 }.andExpect {
                     status { isBadRequest() }
@@ -93,7 +93,7 @@ class SupplierControllerTest
             mockMvc
                 .post("/api/v1/egrunnerverv/okonomi/supplier") {
                     contentType = MediaType.APPLICATION_JSON
-                    header("X-Organization", "novari-no")
+                    header("X-Tenant", "novari-no")
                     content = objectMapper.writeValueAsString(validRequest(fnr = "12345678901", orgId = "123456789"))
                 }.andExpect {
                     status { isBadRequest() }
@@ -106,7 +106,7 @@ class SupplierControllerTest
             mockMvc
                 .post("/api/v1/egrunnerverv/okonomi/supplier") {
                     contentType = MediaType.APPLICATION_JSON
-                    header("X-Organization", "novari-no")
+                    header("X-Tenant", "novari-no")
                     content = objectMapper.writeValueAsString(validRequest(orgId = "abc"))
                 }.andExpect {
                     status { isBadRequest() }
@@ -115,12 +115,12 @@ class SupplierControllerTest
         }
 
         @Test
-        fun `returns invalid tenant error when organization header is unknown`() {
+        fun `returns invalid tenant error when tenant header is unknown`() {
             val response =
                 mockMvc
                     .post("/api/v1/egrunnerverv/okonomi/supplier") {
                         contentType = MediaType.APPLICATION_JSON
-                        header("X-Organization", "unknown")
+                        header("X-Tenant", "unknown")
                         content = objectMapper.writeValueAsString(validRequest())
                     }.andExpect {
                         status { isBadRequest() }

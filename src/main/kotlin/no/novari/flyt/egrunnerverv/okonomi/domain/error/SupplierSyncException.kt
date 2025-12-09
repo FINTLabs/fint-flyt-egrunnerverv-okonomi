@@ -18,6 +18,6 @@ class CreateSupplierException(
     cause: Throwable? = null,
 ) : SupplierSyncException("Klarte ikke å opprette leverandør", cause)
 
-class OrganizationToCompanyException(
+class TenantToCompanyException(
     cause: Throwable? = null,
 ) : SupplierSyncException("Klarte ikke å finne firma for tenant", cause)

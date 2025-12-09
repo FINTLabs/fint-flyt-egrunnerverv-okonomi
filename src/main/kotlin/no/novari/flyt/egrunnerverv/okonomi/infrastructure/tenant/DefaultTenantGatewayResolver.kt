@@ -13,7 +13,7 @@ class DefaultTenantGatewayResolver(
 ) : TenantGatewayResolver {
     override fun resolve(tenantId: TenantId): SupplierGatewayPort {
         val beanName =
-            props.byOrganization[tenantId.id]
+            props.byTenant[tenantId.id]
                 ?: throw NoAdapterMappingException(tenantId.id)
 
         return gateways[beanName]

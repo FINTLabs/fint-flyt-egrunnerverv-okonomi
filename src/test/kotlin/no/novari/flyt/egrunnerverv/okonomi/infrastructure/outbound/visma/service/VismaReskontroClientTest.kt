@@ -6,7 +6,7 @@ import no.novari.flyt.egrunnerverv.okonomi.domain.model.Supplier
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.SupplierIdentity
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.TenantId
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.config.VismaProperties
-import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.error.VismaOrganizationToCompanyException
+import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.error.VismaTenantToCompanyException
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.mapper.SupplierMapper
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -32,7 +32,7 @@ class VismaReskontroClientTest {
             baseUrl = "http://localhost",
             legacyAuth = "legacy",
             oauth = VismaProperties.OAuthProps(tokenUrl = "", clientId = "", clientSecret = ""),
-            company = VismaProperties.Company(byOrganization = mapOf(TenantId.NOVARI.id to "123")),
+            company = VismaProperties.Company(byTenant = mapOf(TenantId("novari-no").id to "123")),
         )
 
     @BeforeEach
@@ -89,7 +89,7 @@ class VismaReskontroClientTest {
         val supplier =
             client.getCustomerSupplierByIdentifier(
                 SupplierIdentity.Fodselsnummer("12345678901"),
-                TenantId.NOVARI,
+                TenantId("novari-no"),
             )
 
         assertNotNull(supplier)
@@ -110,7 +110,7 @@ class VismaReskontroClientTest {
                 baseUrl = "http://localhost",
                 legacyAuth = "legacy",
                 oauth = VismaProperties.OAuthProps(tokenUrl = "", clientId = "", clientSecret = ""),
-                company = VismaProperties.Company(byOrganization = emptyMap()),
+                company = VismaProperties.Company(byTenant = emptyMap()),
             )
         val restClient = RestClient.builder().baseUrl(missingProps.baseUrl).build()
         val localClient =
@@ -120,10 +120,10 @@ class VismaReskontroClientTest {
                 supplierMapper = SupplierMapper(),
             )
 
-        assertFailsWith<VismaOrganizationToCompanyException> {
+        assertFailsWith<VismaTenantToCompanyException> {
             localClient.getCustomerSupplierByIdentifier(
                 SupplierIdentity.Fodselsnummer("12345678901"),
-                TenantId.NOVARI,
+                TenantId("novari-no"),
             )
         }
     }
@@ -158,7 +158,7 @@ class VismaReskontroClientTest {
                     email = "post@test.no",
                 ),
             supplierIdentity = SupplierIdentity.OrgId("999999999"),
-            tenantId = TenantId.NOVARI,
+            tenantId = TenantId("novari-no"),
         )
 
         server.verify()
@@ -194,7 +194,7 @@ class VismaReskontroClientTest {
                     email = "post@test.no",
                 ),
             supplierIdentity = SupplierIdentity.OrgId("999999999"),
-            tenantId = TenantId.NOVARI,
+            tenantId = TenantId("novari-no"),
         )
 
         server.verify()

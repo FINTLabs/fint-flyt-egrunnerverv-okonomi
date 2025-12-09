@@ -21,10 +21,8 @@ spring:
 novari:
   adapter:
       supplier:
-          by-organization:
+          by-tenant:
               novari-no: visma
-#              fylke-1: visma
-#              fylke-2: xledger
 
 visma:
     base-url: ""
@@ -35,11 +33,8 @@ visma:
         token-url: ""
 
     company:
-      by-organization:
+      by-tenant:
         novari-no: 29
-#        fylke-1: 284
-#        fylke-2: 38
-#        fylke-3: 932
 
 logging:
     structured:

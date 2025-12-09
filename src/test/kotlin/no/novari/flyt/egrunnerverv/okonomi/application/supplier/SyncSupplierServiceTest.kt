@@ -27,7 +27,7 @@ class SyncSupplierServiceTest {
             email = "post@test.no",
         )
     private val identity = SupplierIdentity.OrgId("999999999")
-    private val tenant = TenantId.NOVARI
+    private val tenant = TenantId("novari-no")
 
     @Test
     fun `delegates to resolved gateway and returns result`() {

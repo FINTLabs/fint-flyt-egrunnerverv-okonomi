@@ -36,7 +36,7 @@ class RestClientConfigTest {
                         clientId = "clientId",
                         clientSecret = "clientSecret",
                     ),
-                company = VismaProperties.Company(byOrganization = mapOf("novari-no" to "visma")),
+                company = VismaProperties.Company(byTenant = mapOf("novari-no" to "visma")),
             )
         val xmlMapper = config.xmlMapper()
 

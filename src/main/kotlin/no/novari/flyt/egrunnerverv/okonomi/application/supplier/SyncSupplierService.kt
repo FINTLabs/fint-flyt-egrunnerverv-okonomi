@@ -7,7 +7,6 @@ import no.novari.flyt.egrunnerverv.okonomi.domain.model.TenantId
 import no.novari.flyt.egrunnerverv.okonomi.domain.ports.out.SupplierSyncResult
 import org.springframework.stereotype.Service
 
-@Service
 class SyncSupplierService(
     private val tenantGatewayResolver: TenantGatewayResolver,
 ) : SyncSupplierUseCase {

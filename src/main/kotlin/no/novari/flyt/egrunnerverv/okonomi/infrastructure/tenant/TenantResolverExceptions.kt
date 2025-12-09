@@ -1,8 +1,8 @@
 package no.novari.flyt.egrunnerverv.okonomi.infrastructure.tenant
 
 class NoAdapterMappingException(
-    organization: String,
-) : RuntimeException("Ingen adapter mapping for $organization")
+    tenant: String,
+) : RuntimeException("Ingen adapter mapping for $tenant")
 
 class MissingGatewayBeanException(
     beanName: String,

@@ -16,6 +16,6 @@ data class VismaProperties(
     )
 
     data class Company(
-        val byOrganization: Map<String, String>,
+        val byTenant: Map<String, String>,
     )
 }

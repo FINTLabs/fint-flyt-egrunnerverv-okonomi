@@ -5,7 +5,7 @@ import no.novari.flyt.egrunnerverv.okonomi.domain.error.GenericSupplierException
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.GetSupplierException
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.MissingIdentifierException
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.MultipleIdentifiersException
-import no.novari.flyt.egrunnerverv.okonomi.domain.error.OrganizationToCompanyException
+import no.novari.flyt.egrunnerverv.okonomi.domain.error.TenantToCompanyException
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.tenant.MissingGatewayBeanException
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.tenant.NoAdapterMappingException
 import org.junit.jupiter.api.Test
@@ -84,12 +84,12 @@ class GlobalExceptionHandlerTest {
     fun `maps SupplierSyncException variants`() {
         val create = handler.handleSupplierSyncException(CreateSupplierException())
         val get = handler.handleSupplierSyncException(GetSupplierException())
-        val orgToCompany = handler.handleSupplierSyncException(OrganizationToCompanyException())
+        val orgToCompany = handler.handleSupplierSyncException(TenantToCompanyException())
         val generic = handler.handleSupplierSyncException(GenericSupplierException("fail"))
 
         assertEquals(ApiErrorCode.CREATE_SUPPLIER_ERROR.id, requireNotNull(create.body).errorCode)
         assertEquals(ApiErrorCode.GET_SUPPLIER_ERROR.id, requireNotNull(get.body).errorCode)
-        assertEquals(ApiErrorCode.ORGANIZATION_TO_COMPANY_ERROR.id, requireNotNull(orgToCompany.body).errorCode)
+        assertEquals(ApiErrorCode.TENANT_TO_COMPANY_ERROR.id, requireNotNull(orgToCompany.body).errorCode)
         assertEquals(ApiErrorCode.GENERIC_SUPPLIER_ERROR.id, requireNotNull(generic.body).errorCode)
     }
 

@@ -6,8 +6,8 @@ import no.novari.flyt.egrunnerverv.okonomi.domain.error.GenericSupplierException
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.GetSupplierException
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.MissingIdentifierException
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.MultipleIdentifiersException
-import no.novari.flyt.egrunnerverv.okonomi.domain.error.OrganizationToCompanyException
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.SupplierSyncException
+import no.novari.flyt.egrunnerverv.okonomi.domain.error.TenantToCompanyException
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.inbound.web.dto.ErrorResponse
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.tenant.MissingGatewayBeanException
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.tenant.NoAdapterMappingException
@@ -98,7 +98,7 @@ class GlobalExceptionHandler {
                 is CreateSupplierException -> ApiErrorCode.CREATE_SUPPLIER_ERROR
                 is GenericSupplierException -> ApiErrorCode.GENERIC_SUPPLIER_ERROR
                 is GetSupplierException -> ApiErrorCode.GET_SUPPLIER_ERROR
-                is OrganizationToCompanyException -> ApiErrorCode.ORGANIZATION_TO_COMPANY_ERROR
+                is TenantToCompanyException -> ApiErrorCode.TENANT_TO_COMPANY_ERROR
             }
         return ResponseEntity
             .status(HttpStatus.INTERNAL_SERVER_ERROR)

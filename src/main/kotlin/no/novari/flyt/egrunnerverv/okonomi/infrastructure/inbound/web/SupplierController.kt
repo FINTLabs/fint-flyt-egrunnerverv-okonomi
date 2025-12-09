@@ -22,7 +22,7 @@ class SupplierController(
     @PostMapping
     fun getOrCreateSupplier(
         @Valid @RequestBody supplier: SupplierRequest,
-        @RequestHeader("X-Organization") tenantId: TenantId, // TODO: Get organization from a proper place
+        @RequestHeader("X-Tenant") tenantId: TenantId, // TODO: Get tenant from a proper place
     ): ResponseEntity<Void> {
         val syncResult =
             syncSupplierUseCase.getOrCreate(

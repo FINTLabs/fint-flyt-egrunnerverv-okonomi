@@ -6,22 +6,23 @@ import io.mockk.verify
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.CreateSupplierException
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.GenericSupplierException
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.GetSupplierException
-import no.novari.flyt.egrunnerverv.okonomi.domain.error.OrganizationToCompanyException
+import no.novari.flyt.egrunnerverv.okonomi.domain.error.TenantToCompanyException
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.Supplier
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.SupplierIdentity
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.TenantId
 import no.novari.flyt.egrunnerverv.okonomi.domain.ports.out.SupplierSyncResult
+import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.adapter.VismaSupplierAdapter
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.error.VismaCreateSupplierException
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.error.VismaGetSupplierException
-import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.error.VismaOrganizationToCompanyException
+import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.error.VismaTenantToCompanyException
 import org.springframework.web.client.RestClientException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
-class VismaSupplierGatewayTest {
+class VismaSupplierAdapterTest {
     private val client = mockk<VismaReskontroClient>()
-    private val gateway = VismaSupplierGateway(client)
+    private val gateway = VismaSupplierAdapter(client)
     private val supplier =
         Supplier(
             name = "Leverandør AS",
@@ -32,7 +33,7 @@ class VismaSupplierGatewayTest {
             email = "post@test.no",
         )
     private val identity = SupplierIdentity.OrgId("999999999")
-    private val tenantId = TenantId.NOVARI
+    private val tenantId = TenantId("novari-no")
 
     @Test
     fun `creates supplier when not found`() {
@@ -93,13 +94,13 @@ class VismaSupplierGatewayTest {
     }
 
     @Test
-    fun `translates organization to company exception`() {
+    fun `translates tenant to company exception`() {
         every { client.getCustomerSupplierByIdentifier(identity, tenantId) } throws
-            VismaOrganizationToCompanyException(
+            VismaTenantToCompanyException(
                 tenantId,
             )
 
-        assertFailsWith<OrganizationToCompanyException> {
+        assertFailsWith<TenantToCompanyException> {
             gateway.getOrCreate(supplier, identity, tenantId)
         }
     }

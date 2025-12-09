@@ -17,7 +17,7 @@ class VismaCreateSupplierException :
         "Klarte ikke å opprette leverandør i Visma",
     )
 
-class VismaOrganizationToCompanyException(
+class VismaTenantToCompanyException(
     tenantId: TenantId,
 ) : VismaClientException(
         "Klarte ikke å finne firma for tenant $tenantId",
