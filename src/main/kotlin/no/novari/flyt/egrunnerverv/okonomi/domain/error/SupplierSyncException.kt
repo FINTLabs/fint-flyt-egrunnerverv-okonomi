@@ -2,14 +2,22 @@ package no.novari.flyt.egrunnerverv.okonomi.domain.error
 
 sealed class SupplierSyncException(
     message: String,
-) : RuntimeException(message)
+    cause: Throwable? = null,
+) : RuntimeException(message, cause)
 
 class GenericSupplierException(
     message: String,
-) : SupplierSyncException(message)
+    cause: Throwable? = null,
+) : SupplierSyncException(message, cause)
 
-class GetSupplierException : SupplierSyncException("Klarte ikke å hente leverandør")
+class GetSupplierException(
+    cause: Throwable? = null,
+) : SupplierSyncException("Klarte ikke å hente leverandør", cause)
 
-class CreateSupplierException : SupplierSyncException("Klarte ikke å opprette leverandør")
+class CreateSupplierException(
+    cause: Throwable? = null,
+) : SupplierSyncException("Klarte ikke å opprette leverandør", cause)
 
-class OrganizationToCompanyException : SupplierSyncException("Klarte ikke å finne firma for tenant")
+class OrganizationToCompanyException(
+    cause: Throwable? = null,
+) : SupplierSyncException("Klarte ikke å finne firma for tenant", cause)

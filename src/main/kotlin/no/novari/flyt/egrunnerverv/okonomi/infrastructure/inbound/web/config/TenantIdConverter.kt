@@ -7,7 +7,8 @@ import org.springframework.stereotype.Component
 
 @Component
 class TenantIdConverter : Converter<String, TenantId> {
-    override fun convert(source: String): TenantId =
-        TenantId.entries.firstOrNull { it.id.equals(source, ignoreCase = true) }
+    override fun convert(source: String): TenantId {
+        return TenantId.entries.firstOrNull { it.id.equals(source, ignoreCase = true) }
             ?: throw InvalidTenantException(source)
+    }
 }

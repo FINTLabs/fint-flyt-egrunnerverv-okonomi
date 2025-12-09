@@ -25,11 +25,7 @@ class VismaSupplierGateway(
         tenantId: TenantId,
     ): SupplierSyncResult {
         try {
-            val existingSupplier =
-                client.getCustomerSupplierByIdentifier(
-                    supplierIdentity,
-                    tenantId,
-                )
+            val existingSupplier = client.getCustomerSupplierByIdentifier(supplierIdentity, tenantId)
 
             if (existingSupplier == null) {
                 client.createCustomerSupplier(supplier, supplierIdentity, tenantId)
@@ -38,14 +34,14 @@ class VismaSupplierGateway(
             } else {
                 return SupplierSyncResult.Updated
             }
-        } catch (e: VismaClientException) {
-            when (e) {
-                is VismaCreateSupplierException -> throw CreateSupplierException()
-                is VismaGetSupplierException -> throw GetSupplierException()
-                is VismaOrganizationToCompanyException -> throw OrganizationToCompanyException()
+        } catch (vce: VismaClientException) {
+            when (vce) {
+                is VismaCreateSupplierException -> throw CreateSupplierException(vce)
+                is VismaGetSupplierException -> throw GetSupplierException(vce)
+                is VismaOrganizationToCompanyException -> throw OrganizationToCompanyException(vce)
             }
-        } catch (_: Exception) {
-            throw GenericSupplierException("Klient feilet")
+        } catch (e: Exception) {
+            throw GenericSupplierException("Klient feilet", e)
         }
     }
 }

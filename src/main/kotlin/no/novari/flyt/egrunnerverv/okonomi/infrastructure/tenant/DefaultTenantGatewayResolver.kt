@@ -7,12 +7,16 @@ import no.novari.flyt.egrunnerverv.okonomi.infrastructure.config.TenantAdapterPr
 import org.springframework.stereotype.Component
 
 @Component
-class TenantGatewayResolverImpl(
+class DefaultTenantGatewayResolver(
     private val props: TenantAdapterProperties,
     private val gateways: Map<String, SupplierGatewayPort>,
 ) : TenantGatewayResolver {
-    override fun resolve(tenantId: TenantId): SupplierGatewayPort =
-        props.byOrganization[tenantId.id]
-            ?.let { id -> gateways[id] ?: error("Ingen gateway bean med navn $id") }
-            ?: error("Ingen adapter mapping for ${tenantId.id}")
+    override fun resolve(tenantId: TenantId): SupplierGatewayPort {
+        val beanName =
+            props.byOrganization[tenantId.id]
+                ?: throw NoAdapterMappingException(tenantId.id)
+
+        return gateways[beanName]
+            ?: throw MissingGatewayBeanException(beanName)
+    }
 }

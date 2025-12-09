@@ -9,6 +9,8 @@ import no.novari.flyt.egrunnerverv.okonomi.domain.error.MultipleIdentifiersExcep
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.OrganizationToCompanyException
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.SupplierSyncException
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.inbound.web.dto.ErrorResponse
+import no.novari.flyt.egrunnerverv.okonomi.infrastructure.tenant.MissingGatewayBeanException
+import no.novari.flyt.egrunnerverv.okonomi.infrastructure.tenant.NoAdapterMappingException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.MethodArgumentNotValidException
@@ -30,7 +32,7 @@ class GlobalExceptionHandler {
             .body(
                 ErrorResponse(
                     errorCode = apiErrorCode.id,
-                    errorMessage = ex.message ?: "Ukjent feil",
+                    errorMessage = requireNotNull(ex.message),
                 ),
             )
     }
@@ -48,31 +50,49 @@ class GlobalExceptionHandler {
             )
     }
 
-    @ExceptionHandler(InvalidTenantException::class)
-    fun handleInvalidTenant(ex: InvalidTenantException): ResponseEntity<ErrorResponse> =
-        ResponseEntity
-            .status(HttpStatus.BAD_REQUEST)
-            .body(
-                ErrorResponse(
-                    errorCode = ApiErrorCode.INVALID_TENANT_IDENTIFIER.id,
-                    errorMessage = ex.message ?: "Ugyldig tenant-verdi",
-                ),
-            )
-
     @ExceptionHandler(MethodArgumentTypeMismatchException::class)
-    fun handleMethodArgumentTypeMismatch(ex: MethodArgumentTypeMismatchException): ResponseEntity<ErrorResponse> =
-        ResponseEntity
+    fun handleMethodArgumentTypeMismatch(ex: MethodArgumentTypeMismatchException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
             .status(HttpStatus.BAD_REQUEST)
             .body(
                 ErrorResponse(
-                    errorCode = ApiErrorCode.GENERIC_BAD_REQUEST.id,
-                    errorMessage = ex.message,
+                    errorCode =
+                        when (ex.rootCause) {
+                            is InvalidTenantException -> ApiErrorCode.INVALID_TENANT_IDENTIFIER.id
+                            else -> ApiErrorCode.GENERIC_BAD_REQUEST.id
+                        },
+                    errorMessage = ex.rootCause?.message ?: ex.cause?.message ?: ex.message ?: "Ugyldig input",
                 ),
             )
+    }
+
+    @ExceptionHandler(NoAdapterMappingException::class)
+    fun handleNoAdapterMapping(ex: NoAdapterMappingException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(
+                ErrorResponse(
+                    errorCode = ApiErrorCode.MISSING_ADAPTER_MAPPING.id,
+                    errorMessage = requireNotNull(ex.message),
+                ),
+            )
+    }
+
+    @ExceptionHandler(MissingGatewayBeanException::class)
+    fun handleMissingGatewayBean(ex: MissingGatewayBeanException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(
+                ErrorResponse(
+                    errorCode = ApiErrorCode.MISSING_GATEWAY_BEAN.id,
+                    errorMessage = requireNotNull(ex.message),
+                ),
+            )
+    }
 
     @ExceptionHandler(SupplierSyncException::class)
     fun handleSupplierSyncException(ex: SupplierSyncException): ResponseEntity<ErrorResponse> {
-        val msg = ex.message ?: "Ukjent feil i Visma klient"
+        val msg = requireNotNull(ex.message)
         val apiErrorCode =
             when (ex) {
                 is CreateSupplierException -> ApiErrorCode.CREATE_SUPPLIER_ERROR
