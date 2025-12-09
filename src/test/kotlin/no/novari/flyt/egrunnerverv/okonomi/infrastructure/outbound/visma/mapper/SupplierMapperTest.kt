@@ -74,7 +74,7 @@ class SupplierMapperTest {
                                         csName = "Test Leverandør",
                                         csAddress = listOf("Inngang 1", "Gate 2"),
                                         csPostalAddress = PostalAddress(zipCode = "0010", city = "Oslo"),
-                                        csEmail = "contact@test.no",
+                                        csEmail = "post@test.no",
                                         bankAccount = "1234.56.78901",
                                         orgNo = "999999999",
                                     ),
@@ -91,7 +91,7 @@ class SupplierMapperTest {
         assertEquals("Inngang 1, Gate 2", supplier.street)
         assertEquals("0010", supplier.zip)
         assertEquals("Oslo", supplier.city)
-        assertEquals("contact@test.no", supplier.email)
+        assertEquals("post@test.no", supplier.email)
     }
 
     @Test
@@ -117,12 +117,12 @@ class SupplierMapperTest {
     fun `mapToVismaRequest maps fields and splits street`() {
         val supplier =
             Supplier(
-                name = "Leverandør",
+                name = "Leverandør AS",
                 kontoNummer = "1234.56.78901",
                 street = "Oppgang 1, Gate 2",
                 zip = "0010",
                 city = "Oslo",
-                email = "contact@test.no",
+                email = "post@test.no",
             )
         val identity = SupplierIdentity.OrgId("999999999")
 

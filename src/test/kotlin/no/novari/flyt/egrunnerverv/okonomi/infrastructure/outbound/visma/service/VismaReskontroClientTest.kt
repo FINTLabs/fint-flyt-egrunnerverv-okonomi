@@ -32,7 +32,7 @@ class VismaReskontroClientTest {
             baseUrl = "http://localhost",
             legacyAuth = "legacy",
             oauth = VismaProperties.OAuthProps(tokenUrl = "", clientId = "", clientSecret = ""),
-            company = VismaProperties.Company(byOrganization = mapOf("novari-no" to "COMP")),
+            company = VismaProperties.Company(byOrganization = mapOf(TenantId.NOVARI.id to "123")),
         )
 
     @BeforeEach
@@ -66,13 +66,13 @@ class VismaReskontroClientTest {
             <VUXML>
               <customerSuppliers company="123" division="0">
                 <customerSupplier csType="L">
-                  <csName>Test Leverandor</csName>
+                  <csName>Test Leverandør</csName>
                   <csAddress>Gate 1</csAddress>
                   <csPostalAddress>
                     <zipCode>0010</zipCode>
                     <city>Oslo</city>
                   </csPostalAddress>
-                  <csEmail>contact@test.no</csEmail>
+                  <csEmail>post@test.no</csEmail>
                   <bankAccount>1234.56.78901</bankAccount>
                   <orgNo>12345678901</orgNo>
                 </customerSupplier>
@@ -81,7 +81,7 @@ class VismaReskontroClientTest {
             """.trimIndent()
 
         server
-            .expect(requestTo("http://localhost/erp_ws/oauth/reskontro/COMP/0?fnr=12345678901"))
+            .expect(requestTo("http://localhost/erp_ws/oauth/reskontro/123/0?fnr=12345678901"))
             .andExpect(method(HttpMethod.GET))
             .andExpect(queryParam("fnr", "12345678901"))
             .andRespond(withSuccess(xmlResponse, MediaType.TEXT_XML))
@@ -93,12 +93,12 @@ class VismaReskontroClientTest {
             )
 
         assertNotNull(supplier)
-        assertEquals("Test Leverandor", supplier.name)
+        assertEquals("Test Leverandør", supplier.name)
         assertEquals("1234.56.78901", supplier.kontoNummer)
         assertEquals("Gate 1", supplier.street)
         assertEquals("0010", supplier.zip)
         assertEquals("Oslo", supplier.city)
-        assertEquals("contact@test.no", supplier.email)
+        assertEquals("post@test.no", supplier.email)
 
         server.verify()
     }
@@ -150,12 +150,12 @@ class VismaReskontroClientTest {
         client.createCustomerSupplier(
             supplier =
                 Supplier(
-                    name = "Supplier",
+                    name = "Leverandør AS",
                     kontoNummer = "1234.56.78901",
-                    street = "Street 1",
+                    street = "Gate 1",
                     zip = "0010",
                     city = "Oslo",
-                    email = "contact@test.no",
+                    email = "post@test.no",
                 ),
             supplierIdentity = SupplierIdentity.OrgId("999999999"),
             tenantId = TenantId.NOVARI,
@@ -186,12 +186,12 @@ class VismaReskontroClientTest {
         client.createCustomerSupplier(
             supplier =
                 Supplier(
-                    name = "Leverandor",
+                    name = "Leverandør AS",
                     kontoNummer = "1234.56.78901",
                     street = "Gate 1",
                     zip = "0010",
                     city = "Oslo",
-                    email = "contact@test.no",
+                    email = "post@test.no",
                 ),
             supplierIdentity = SupplierIdentity.OrgId("999999999"),
             tenantId = TenantId.NOVARI,

@@ -19,12 +19,12 @@ class SyncSupplierServiceTest {
 
     private val supplier =
         Supplier(
-            name = "Leverandør",
+            name = "Leverandør AS",
             kontoNummer = "1234.56.78901",
             street = "Gate 1",
             zip = "0010",
             city = "Oslo",
-            email = "contact@test.no",
+            email = "post@test.no",
         )
     private val identity = SupplierIdentity.OrgId("999999999")
     private val tenant = TenantId.NOVARI

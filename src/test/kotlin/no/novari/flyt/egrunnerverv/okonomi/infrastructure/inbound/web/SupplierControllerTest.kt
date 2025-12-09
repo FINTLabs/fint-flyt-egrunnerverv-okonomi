@@ -55,12 +55,12 @@ class SupplierControllerTest
             SupplierRequest(
                 fodselsNummer = fnr,
                 orgId = orgId,
-                name = "Supplier",
+                name = "Leverandør AS",
                 kontoNummer = "1234.56.78901",
-                street = "Street 1",
+                street = "Gate 1",
                 zip = "0010",
                 city = "Oslo",
-                email = "contact@test.no",
+                email = "post@test.no",
             )
 
         @Test

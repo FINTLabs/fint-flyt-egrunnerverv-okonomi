@@ -14,7 +14,7 @@ class VUXmlStoreResponseTest {
               <customerSuppliers company="123">
                 <stored>true</stored>
                 <updated>false</updated>
-                <errors>none</errors>
+                <errors></errors>
               </customerSuppliers>
             </VUXML>
             """.trimIndent()
@@ -25,6 +25,6 @@ class VUXmlStoreResponseTest {
         assertEquals("123", response.customerSuppliers.company)
         assertEquals("true", response.customerSuppliers.stored)
         assertEquals("false", response.customerSuppliers.updated)
-        assertEquals("none", response.customerSuppliers.errors)
+        assertEquals("", response.customerSuppliers.errors)
     }
 }
