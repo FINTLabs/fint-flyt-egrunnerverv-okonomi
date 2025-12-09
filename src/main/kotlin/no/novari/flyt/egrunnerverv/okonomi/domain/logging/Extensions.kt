@@ -22,32 +22,32 @@ private fun maskValue(
     value: Any?,
     annotation: LogMasked,
 ): Any? {
-    return when {
-        value == null -> {
-            null
-        }
+    if (value == null) {
+        return null
+    }
 
-        value !is String -> {
-            "***"
-        }
+    if (value !is String) {
+        return "***"
+    }
 
-        annotation.type == MaskType.FULL -> {
+    return when (annotation.type) {
+        MaskType.FULL -> {
             "********"
         }
 
-        annotation.type == MaskType.KEEP_LAST -> {
+        MaskType.KEEP_LAST -> {
             val keep = annotation.last.coerceAtLeast(0)
             val suffix = value.takeLast(keep.coerceAtMost(value.length))
             suffix.padStart(value.length, '*')
         }
 
-        annotation.type == MaskType.KEEP_FIRST -> {
+        MaskType.KEEP_FIRST -> {
             val keep = annotation.first.coerceAtLeast(0)
             val prefix = value.take(keep.coerceAtMost(value.length))
             prefix.padEnd(value.length, '*')
         }
 
-        annotation.type == MaskType.KEEP_FIRST_AND_LAST -> {
+        MaskType.KEEP_FIRST_AND_LAST -> {
             val firstCount = annotation.first.coerceAtLeast(0)
             val lastCount = annotation.last.coerceAtLeast(0)
             if (firstCount + lastCount >= value.length) {
@@ -58,10 +58,6 @@ private fun maskValue(
                 val maskedMiddleLength = (value.length - firstCount - lastCount).coerceAtLeast(0)
                 prefix + "*".repeat(maskedMiddleLength) + suffix
             }
-        }
-
-        else -> {
-            "***"
         }
     }
 }

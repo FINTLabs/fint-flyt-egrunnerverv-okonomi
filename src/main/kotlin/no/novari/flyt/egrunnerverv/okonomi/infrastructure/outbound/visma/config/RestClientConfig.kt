@@ -31,15 +31,15 @@ class RestClientConfig {
         }
     }
 
-    @Bean
+    @Bean("vismaRestClient")
     fun vismaRestClient(
         xmlMapper: ObjectMapper,
         props: VismaProperties,
         manager: OAuth2AuthorizedClientManager,
+        builder: RestClient.Builder = RestClient.builder(),
     ): RestClient {
         // TODO: Configure timeouts/retries
-        return RestClient
-            .builder()
+        return builder
             .baseUrl(props.baseUrl)
             .messageConverters { it.add(MappingJackson2XmlHttpMessageConverter(xmlMapper)) }
             .requestInterceptor { req, body, exec ->

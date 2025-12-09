@@ -32,7 +32,12 @@ sealed interface SupplierIdentity {
 
         private val fnrRegex = Regex("^\\d{11}$")
 
-        fun fromValue(value: String): SupplierIdentity =
-            if (fnrRegex.matches(value.trim())) Fodselsnummer(value.trim()) else OrgId(value.trim())
+        fun fromValue(value: String): SupplierIdentity {
+            return if (fnrRegex.matches(value.trim())) {
+                Fodselsnummer(value.trim())
+            } else {
+                OrgId(value.trim())
+            }
+        }
     }
 }
