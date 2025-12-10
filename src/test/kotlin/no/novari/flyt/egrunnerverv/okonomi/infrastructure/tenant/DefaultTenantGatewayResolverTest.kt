@@ -45,7 +45,7 @@ class DefaultTenantGatewayResolverTest {
             assertFailsWith<NoAdapterMappingException> {
                 resolver.resolve(TenantId("novari-no"))
             }
-        assertEquals("Ingen adapter mapping for novari-no", ex.message)
+        assertEquals("Fant ingen adapter-konfigurasjon for tenant 'novari-no'", ex.message)
     }
 
     @Test
@@ -60,6 +60,6 @@ class DefaultTenantGatewayResolverTest {
             assertFailsWith<MissingGatewayBeanException> {
                 resolver.resolve(TenantId("novari-no"))
             }
-        assertEquals("Ingen gateway bean med navn visma", ex.message)
+        assertEquals("Fant ingen gateway med navnet 'visma'. Sjekk konfigurasjonen.", ex.message)
     }
 }

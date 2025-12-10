@@ -19,7 +19,9 @@ class SupplierMapper {
                 ?: if (suppliersList.isEmpty()) {
                     return null
                 } else {
-                    error("Forventet nøyaktig 1 <customerSuppliers>, men fikk ${suppliersList.size}")
+                    error(
+                        "Uventet svar fra Visma: forventet ett <customerSuppliers>-element, men fikk ${suppliersList.size}.",
+                    )
                 }
 
         val customerList = customerSuppliers.customerSupplier
@@ -29,7 +31,9 @@ class SupplierMapper {
                 ?: if (customerList.isEmpty()) {
                     return null
                 } else {
-                    error("Forventet nøyaktig 1 <customerSupplier>, men fikk ${customerList.size}")
+                    error(
+                        "Uventet svar fra Visma: forventet ett <customerSupplier>-element, men fikk ${customerList.size}.",
+                    )
                 }
 
         return mapToSupplier(customerSupplier)

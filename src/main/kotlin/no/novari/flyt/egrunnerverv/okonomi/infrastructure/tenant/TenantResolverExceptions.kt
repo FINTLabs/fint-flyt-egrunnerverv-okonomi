@@ -2,8 +2,8 @@ package no.novari.flyt.egrunnerverv.okonomi.infrastructure.tenant
 
 class NoAdapterMappingException(
     tenant: String,
-) : RuntimeException("Ingen adapter mapping for $tenant")
+) : RuntimeException("Fant ingen adapter-konfigurasjon for tenant '$tenant'")
 
 class MissingGatewayBeanException(
     beanName: String,
-) : RuntimeException("Ingen gateway bean med navn $beanName")
+) : RuntimeException("Fant ingen gateway med navnet '$beanName'. Sjekk konfigurasjonen.")

@@ -39,7 +39,10 @@ class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException::class)
     fun handleValidation(ex: MethodArgumentNotValidException): ResponseEntity<ErrorResponse> {
-        val msg = ex.bindingResult.allErrors.joinToString("; ") { it.defaultMessage ?: "Ugyldig input" }
+        val msg =
+            ex.bindingResult.allErrors.joinToString("; ") {
+                it.defaultMessage ?: "Ugyldig forespørsel. Se detaljer for feltfeil."
+            }
         return ResponseEntity
             .status(HttpStatus.BAD_REQUEST)
             .body(
@@ -129,7 +132,8 @@ class GlobalExceptionHandler {
             .body(
                 ErrorResponse(
                     errorCode = ApiErrorCode.UNKNOWN_ERROR.id,
-                    errorMessage = "Uventet feil: ${ex.message}",
+                    // Ikke lekk interne detaljer
+                    errorMessage = "En uventet feil oppsto. Prøv igjen, eller kontakt FLYT hvis problemet fortsetter.",
                 ),
             )
     }

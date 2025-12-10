@@ -136,6 +136,6 @@ class SupplierControllerTest
                     .contentAsString
 
             val error = objectMapper.readValue(response, ErrorResponse::class.java)
-            assertContains(error.errorMessage, "Ukjent tenant: unknown")
+            assertContains(error.errorMessage, "Ukjent tenant-verdi 'unknown'. Kontroller X-Tenant-headeren.")
         }
     }

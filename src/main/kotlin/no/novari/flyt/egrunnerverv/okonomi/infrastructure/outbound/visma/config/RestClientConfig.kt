@@ -68,7 +68,7 @@ class RestClientConfig {
                         .build()
                 val client =
                     manager.authorize(auth)
-                        ?: error("Klarte ikke å autorisere med Visma")
+                        ?: error("Autorisasjon mot Visma feilet. Sjekk OAuth2-konfigurasjonen.")
                 req.headers.setBearerAuth(client.accessToken.tokenValue)
                 req.headers.add("Legacy-Auth", props.legacyAuth)
                 exec.execute(req, body)

@@ -9,16 +9,16 @@ sealed class VismaClientException(
 
 class VismaGetSupplierException :
     VismaClientException(
-        "Klarte ikke å hente leverandør fra Visma",
+        "Kunne ikke hente leverandør i Visma. Prøv igjen senere eller kontakt FLYT om feilen vedvarer",
     )
 
 class VismaCreateSupplierException :
     VismaClientException(
-        "Klarte ikke å opprette leverandør i Visma",
+        "Kunne ikke opprette leverandør i Visma. Prøv igjen senere eller kontakt FLYT om feilen vedvarer",
     )
 
 class VismaTenantToCompanyException(
     tenantId: TenantId,
 ) : VismaClientException(
-        "Klarte ikke å finne firma for tenant $tenantId",
+        "Fant ingen selskapsmapping for tenant $tenantId",
     )

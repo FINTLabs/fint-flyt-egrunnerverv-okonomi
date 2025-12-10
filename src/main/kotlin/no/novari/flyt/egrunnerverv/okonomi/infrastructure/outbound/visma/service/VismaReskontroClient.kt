@@ -80,7 +80,7 @@ class VismaReskontroClient(
         return props.company.byTenant[tenantId.id]
             ?: run {
                 logger.atWarn {
-                    message = "Fant ikke noe selskap for tenant"
+                    message = "Fant ingen selskapsmapping for tenant"
                     arguments = arrayOf(kv("tenant", tenantId))
                 }
                 throw VismaTenantToCompanyException(tenantId)
@@ -154,7 +154,7 @@ class VismaReskontroClient(
 
             else -> {
                 logger.atError {
-                    message = "Oppretting/oppdatering av leverandør i Visma feilet"
+                    message = "Kunne ikke opprette eller oppdatere leverandør i Visma"
                     arguments =
                         arrayOf(
                             kv("leverandør", supplier.toMaskedLogMap()),

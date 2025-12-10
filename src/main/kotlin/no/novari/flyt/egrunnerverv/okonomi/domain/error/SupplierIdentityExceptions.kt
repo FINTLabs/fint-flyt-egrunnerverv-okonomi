@@ -4,6 +4,7 @@ sealed class DomainValidationException(
     message: String,
 ) : RuntimeException(message)
 
-class MissingIdentifierException : DomainValidationException("Fødselsnummer eller orgId må settes")
+class MissingIdentifierException : DomainValidationException("Oppgi enten fødselsnummer eller organisasjonsnummer")
 
-class MultipleIdentifiersException : DomainValidationException("Kun ett av fødselsnummer/orgnr kan settes")
+class MultipleIdentifiersException :
+    DomainValidationException("Oppgi bare én av delene – fødselsnummer eller organisasjonsnummer")

@@ -42,7 +42,7 @@ class VismaSupplierAdapter(
                 is VismaTenantToCompanyException -> throw TenantToCompanyException(vce)
             }
         } catch (e: Exception) {
-            throw GenericSupplierException("Klient feilet", e)
+            throw GenericSupplierException("Ukjent feil i kommunikasjonen med Visma-klienten", e)
         }
     }
 }

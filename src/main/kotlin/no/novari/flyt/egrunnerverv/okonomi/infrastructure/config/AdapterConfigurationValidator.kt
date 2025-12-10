@@ -25,14 +25,14 @@ class AdapterConfigurationValidator(
         val unusedCompany = companyTenants - vismaTenants
 
         require(missingCompany.isEmpty()) {
-            "Mangler Visma company-mapping for tenants: $missingCompany"
+            "Mangler selskapsmapping mot Visma for tenant(s): $missingCompany."
         }
         require(unusedCompany.isEmpty()) {
-            "Visma company-mapping definert for tenants som ikke er mappet til visma-adapter: $unusedCompany"
+            "Selskapsmapping mot Visma er definert for tenants som ikke er koblet til Visma-adapteret: $unusedCompany."
         }
 
         if (vismaTenants.isEmpty()) {
-            logger.warn { "Ingen tenants er satt opp til å bruke visma-adapteret" }
+            logger.warn { "Ingen tenants er konfigurert til å bruke Visma-adapteret" }
         }
     }
 
