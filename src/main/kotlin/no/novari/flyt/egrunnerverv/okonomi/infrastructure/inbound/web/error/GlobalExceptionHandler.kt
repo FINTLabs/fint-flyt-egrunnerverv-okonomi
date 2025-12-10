@@ -1,5 +1,6 @@
 package no.novari.flyt.egrunnerverv.okonomi.infrastructure.inbound.web.error
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.CreateSupplierException
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.DomainValidationException
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.GenericSupplierException
@@ -20,6 +21,8 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 @RestControllerAdvice
 class GlobalExceptionHandler {
+    private val logger = KotlinLogging.logger {}
+
     @ExceptionHandler(DomainValidationException::class)
     fun handleDomainValidationException(ex: DomainValidationException): ResponseEntity<ErrorResponse> {
         val apiErrorCode =
@@ -127,6 +130,9 @@ class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception::class)
     fun handleGeneric(ex: Exception): ResponseEntity<ErrorResponse> {
+        logger.error(ex) {
+            "Ukjent feil under håndtering av forespørsel"
+        }
         return ResponseEntity
             .status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(
