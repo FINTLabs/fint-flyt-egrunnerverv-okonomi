@@ -17,8 +17,11 @@ import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.model.V
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.model.VUXmlStoreResponse
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.http.MediaType
+import org.springframework.retry.annotation.Backoff
+import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestClient
+import org.springframework.web.client.body
 
 @Service
 class VismaReskontroClient(
@@ -27,6 +30,14 @@ class VismaReskontroClient(
     private val supplierMapper: SupplierMapper,
     private val logger: KLogger = KotlinLogging.logger {},
 ) {
+    @Retryable(
+        maxAttemptsExpression = "\${adapter.adapters.visma.retry.max-attempts}",
+        backoff =
+            Backoff(
+                delayExpression = "\${adapter.adapters.visma.retry.initial-interval-ms}",
+                maxDelayExpression = "10000",
+            ),
+    )
     fun getCustomerSupplierByIdentifier(
         supplierIdentity: SupplierIdentity,
         tenantId: TenantId,
@@ -45,7 +56,7 @@ class VismaReskontroClient(
                         .build()
                 }.accept(MediaType.TEXT_XML)
                 .retrieve()
-                .body(VUXml::class.java)
+                .body<VUXml>()
                 ?: throw VismaGetSupplierException()
 
         return supplierMapper.mapSingleSupplier(xmlResponse)
@@ -76,6 +87,14 @@ class VismaReskontroClient(
             }
     }
 
+    @Retryable(
+        maxAttemptsExpression = "\${adapter.adapters.visma.retry.max-attempts}",
+        backoff =
+            Backoff(
+                delayExpression = "\${adapter.adapters.visma.retry.initial-interval-ms}",
+                maxDelayExpression = "10000",
+            ),
+    )
     fun createCustomerSupplier(
         supplier: Supplier,
         supplierIdentity: SupplierIdentity,
@@ -101,7 +120,7 @@ class VismaReskontroClient(
                 .accept(MediaType.TEXT_XML)
                 .body(requestBody)
                 .retrieve()
-                .body(VUXmlStoreResponse::class.java)
+                .body<VUXmlStoreResponse>()
                 ?: throw VismaCreateSupplierException()
 
         val result = response.customerSuppliers

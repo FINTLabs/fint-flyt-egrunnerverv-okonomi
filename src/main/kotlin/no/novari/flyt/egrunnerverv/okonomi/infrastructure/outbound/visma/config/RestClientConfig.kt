@@ -3,9 +3,12 @@ package no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.config
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import org.springframework.boot.http.client.ClientHttpRequestFactoryBuilder
+import org.springframework.boot.http.client.ClientHttpRequestFactorySettings
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.converter.xml.MappingJackson2XmlHttpMessageConverter
+import org.springframework.retry.annotation.EnableRetry
 import org.springframework.security.oauth2.client.ClientCredentialsOAuth2AuthorizedClientProvider
 import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager
@@ -15,6 +18,7 @@ import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepo
 import org.springframework.web.client.RestClient
 
 @Configuration
+@EnableRetry
 class RestClientConfig {
     @Bean
     fun xmlMapper(): ObjectMapper {
@@ -38,9 +42,23 @@ class RestClientConfig {
         manager: OAuth2AuthorizedClientManager,
         builder: RestClient.Builder = RestClient.builder(),
     ): RestClient {
-        // TODO: Configure timeouts/retries
+        val connectTimeout = props.timeouts.connect
+        val readTimeout = props.timeouts.read
+
+        val settings =
+            ClientHttpRequestFactorySettings
+                .defaults()
+                .withConnectTimeout(connectTimeout)
+                .withReadTimeout(readTimeout)
+
+        val requestFactory =
+            ClientHttpRequestFactoryBuilder
+                .detect()
+                .build(settings)
+
         return builder
             .baseUrl(props.baseUrl)
+            .requestFactory(requestFactory)
             .messageConverters { it.add(MappingJackson2XmlHttpMessageConverter(xmlMapper)) }
             .requestInterceptor { req, body, exec ->
                 val auth =

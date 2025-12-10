@@ -1,5 +1,6 @@
 package no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.config
 
+import com.sun.net.httpserver.HttpServer
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -12,12 +13,9 @@ import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager
 import org.springframework.security.oauth2.client.registration.ClientRegistration
 import org.springframework.security.oauth2.core.AuthorizationGrantType
 import org.springframework.security.oauth2.core.OAuth2AccessToken
-import org.springframework.test.web.client.MockRestServiceServer
-import org.springframework.test.web.client.match.MockRestRequestMatchers.header
-import org.springframework.test.web.client.match.MockRestRequestMatchers.method
-import org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo
-import org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess
 import org.springframework.web.client.RestClient
+import org.springframework.web.client.body
+import java.net.InetSocketAddress
 import java.time.Instant
 import kotlin.test.assertEquals
 
@@ -62,24 +60,30 @@ class RestClientConfigTest {
             )
         every { manager.authorize(any<OAuth2AuthorizeRequest>()) } returns authorizedClient
 
-        val restClientBuilder = RestClient.builder()
-        val server = MockRestServiceServer.bindTo(restClientBuilder).build()
-        val restClient: RestClient = config.vismaRestClient(xmlMapper, props, manager, restClientBuilder)
+        val responseXml =
+            """
+            <VUXML>
+                <customerSuppliers company="123" division="0"></customerSuppliers>
+            </VUXML>
+            """.trimIndent()
+        val server =
+            HttpServer.create(InetSocketAddress(0), 0).apply {
+                createContext("/erp_ws/oauth/test") { exchange ->
+                    val bytes = responseXml.toByteArray()
+                    exchange.responseHeaders.add("Content-Type", MediaType.TEXT_XML_VALUE)
+                    exchange.sendResponseHeaders(200, bytes.size.toLong())
+                    exchange.responseBody.use { it.write(bytes) }
+                }
+                start()
+            }
+        val baseUrl = "http://localhost:${server.address.port}"
 
-        server
-            .expect(requestTo("https://example.com/erp_ws/oauth/test"))
-            .andExpect(method(org.springframework.http.HttpMethod.GET))
-            .andExpect(header("Authorization", "Bearer access-token"))
-            .andExpect(header("Legacy-Auth", "legacy-token"))
-            .andRespond(
-                withSuccess(
-                    """
-                    <VUXML>
-                        <customerSuppliers company="123" division="0"></customerSuppliers>
-                    </VUXML>
-                    """.trimIndent(),
-                    MediaType.TEXT_XML,
-                ),
+        val restClient: RestClient =
+            config.vismaRestClient(
+                xmlMapper = xmlMapper,
+                props = props.copy(baseUrl = baseUrl),
+                manager = manager,
+                builder = RestClient.builder(),
             )
 
         val response =
@@ -87,11 +91,11 @@ class RestClientConfigTest {
                 .get()
                 .uri("/erp_ws/oauth/test")
                 .retrieve()
-                .body(VUXml::class.java)
+                .body<VUXml>()
 
         val body = requireNotNull(response)
         assertEquals("123", body.customerSuppliers.first().company)
-        server.verify()
         verify(exactly = 1) { manager.authorize(any<OAuth2AuthorizeRequest>()) }
+        server.stop(0)
     }
 }

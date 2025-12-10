@@ -104,6 +104,7 @@ class GlobalExceptionHandlerTest {
         Dummy::class.memberFunctions.first { it.name == "dummyWithParam" }.javaMethod!!
 
     private class Dummy {
+        @Suppress("unused")
         fun dummyWithParam(value: String = "") {}
     }
 }

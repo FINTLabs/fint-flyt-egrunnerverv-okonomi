@@ -50,6 +50,18 @@ class GlobalExceptionHandler {
             )
     }
 
+    @ExceptionHandler(InvalidTenantException::class)
+    fun handleInvalidTenant(ex: InvalidTenantException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(
+                ErrorResponse(
+                    errorCode = ApiErrorCode.INVALID_TENANT_IDENTIFIER.id,
+                    errorMessage = requireNotNull(ex.message),
+                ),
+            )
+    }
+
     @ExceptionHandler(MethodArgumentTypeMismatchException::class)
     fun handleMethodArgumentTypeMismatch(ex: MethodArgumentTypeMismatchException): ResponseEntity<ErrorResponse> {
         return ResponseEntity
@@ -61,7 +73,7 @@ class GlobalExceptionHandler {
                             is InvalidTenantException -> ApiErrorCode.INVALID_TENANT_IDENTIFIER.id
                             else -> ApiErrorCode.GENERIC_BAD_REQUEST.id
                         },
-                    errorMessage = ex.rootCause?.message ?: ex.cause?.message ?: ex.message ?: "Ugyldig input",
+                    errorMessage = ex.rootCause?.message ?: ex.cause?.message ?: ex.message,
                 ),
             )
     }

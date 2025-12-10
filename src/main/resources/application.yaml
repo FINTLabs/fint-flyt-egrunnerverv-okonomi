@@ -18,23 +18,27 @@ spring:
     virtual:
       enabled: true
 
-novari:
-  adapter:
-      supplier:
-          by-tenant:
-              novari-no: visma
+adapter:
+    leverandor:
+        by-tenant:
+            novari-no: visma
 
-visma:
-    base-url: ""
-    legacy-auth: ""
-    oauth:
-        client-id: ""
-        client-secret: ""
-        token-url: ""
+    adapters:
+        visma:
+            base-url: ""
+            legacy-auth: ""
+            oauth:
+                client-id: ""
+                client-secret: ""
+                token-url: ""
 
-    company:
-      by-tenant:
-        novari-no: 29
+            company:
+              by-tenant:
+                novari-no: 29
+
+            retry:
+                max-attempts: 5
+                initial-interval-ms: 500
 
 logging:
     structured:

@@ -19,6 +19,7 @@ import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
+import org.springframework.test.context.TestPropertySource
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.post
 import kotlin.test.assertContains
@@ -26,6 +27,11 @@ import kotlin.test.assertContains
 @WebMvcTest(controllers = [SupplierController::class])
 @AutoConfigureMockMvc(addFilters = false)
 @Import(TenantIdConverter::class, GlobalExceptionHandler::class, SupplierControllerTest.StubConfig::class)
+@TestPropertySource(
+    properties = [
+        "adapter.leverandor.by-tenant.novari-no=visma",
+    ],
+)
 class SupplierControllerTest
     @Autowired
     constructor(
