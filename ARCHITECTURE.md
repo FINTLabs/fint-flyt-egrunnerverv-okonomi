@@ -1,0 +1,89 @@
+# Arkitektur
+Dette dokumentet beskriver hvordan appen er bygget og hvordan et kall flyter gjennom lagene slik den fungerer nå.
+
+## Lagdelt oversikt
+```mermaid
+flowchart LR
+    Client[Klient] --> Controller["SupplierController\nREST"]
+    Controller --> TenantConv[TenantIdConverter]
+    Controller -->|DTO -> domene| UseCase["SyncSupplierService\nSyncSupplierUseCase"]
+    UseCase --> Resolver["DefaultTenantGatewayResolver\nTenantGatewayResolver"]
+    Resolver --> Adapter["SupplierGatewayPort\nVismaSupplierAdapter"]
+    Adapter --> VismaClient["VismaReskontroClient\nRestClient + retry"]
+    VismaClient --> VismaAPI["Visma ERP API"]
+
+    subgraph Inbound Web
+      Controller
+      TenantConv
+      GlobalHandler[GlobalExceptionHandler]
+    end
+
+    subgraph Application
+      UseCase
+      Resolver
+    end
+
+    subgraph Domain
+      Models[Supplier/SupplierIdentity/TenantId]
+      Errors[Domain/SupplierSync exceptions]
+      Logging[LogMasked + toMaskedLogMap]
+    end
+
+    subgraph Outbound Infra
+      Adapter
+      VismaClient
+      Mapper[SupplierMapper]
+      Config[AdapterLeverandorProperties\nVismaProperties\nRestClientConfig]
+    end
+```
+
+## Kallflyt (POST /supplier)
+```mermaid
+sequenceDiagram
+    participant K as Klient
+    participant C as SupplierController
+    participant T as TenantIdConverter
+    participant S as SyncSupplierService
+    participant R as DefaultTenantGatewayResolver
+    participant A as VismaSupplierAdapter
+    participant V as VismaReskontroClient
+    participant X as Visma API
+
+    K->>C: POST /api/v1/egrunnerverv/okonomi/supplier (body + X-Tenant)
+    C->>T: convert(X-Tenant)
+    T-->>C: TenantId
+    C->>S: getOrCreate(supplier, identity, tenantId)
+    S->>R: resolve(tenantId)
+    R-->>S: SupplierGatewayPort (visma)
+    S->>A: getOrCreate(...)
+    A->>V: getCustomerSupplierByIdentifier(...)
+    V->>X: GET /erp_ws/oauth/reskontro/{company}/0?fnr={id}
+    X-->>V: VUXml (tom => ikke funnet)
+    V-->>A: null (ikke funnet)
+    A->>V: createCustomerSupplier(...)
+    V->>X: POST /erp_ws/oauth/reskontro (VUXml)
+    X-->>V: VUXmlStoreResponse
+    V-->>A: lagret/oppdatert
+    A-->>S: SupplierSyncResult.Created/Updated
+    S-->>C: OK
+    C-->>K: 200 OK (tom body)
+```
+
+## Komponenter
+- **Inbound Web**: [`SupplierController`](src/main/kotlin/no/novari/flyt/egrunnerverv/okonomi/infrastructure/inbound/web/SupplierController.kt) tar imot kall, validerer DTO med Jakarta Validation, og bruker [`TenantIdConverter`](src/main/kotlin/no/novari/flyt/egrunnerverv/okonomi/infrastructure/inbound/web/config/TenantIdConverter.kt) for å sikre gyldig tenant. [`GlobalExceptionHandler`](src/main/kotlin/no/novari/flyt/egrunnerverv/okonomi/infrastructure/inbound/web/error/GlobalExceptionHandler.kt) mapper domene-/valideringsfeil til konsistente [`ErrorResponse`](src/main/kotlin/no/novari/flyt/egrunnerverv/okonomi/infrastructure/inbound/web/dto/ErrorResponse.kt) med [`ApiErrorCode`](src/main/kotlin/no/novari/flyt/egrunnerverv/okonomi/infrastructure/inbound/web/error/ApiErrorCode.kt).
+- **Application**: [`SyncSupplierService`](src/main/kotlin/no/novari/flyt/egrunnerverv/okonomi/application/supplier/SyncSupplierService.kt) implementerer [`SyncSupplierUseCase`](src/main/kotlin/no/novari/flyt/egrunnerverv/okonomi/application/supplier/SyncSupplierUseCase.kt). Kaller [`TenantGatewayResolver`](src/main/kotlin/no/novari/flyt/egrunnerverv/okonomi/application/tenant/TenantGatewayResolver.kt) for å finne riktig [`SupplierGatewayPort`](src/main/kotlin/no/novari/flyt/egrunnerverv/okonomi/domain/ports/out/SupplierGatewayPort.kt) basert på tenant.
+- **Domain**: [`Supplier`](src/main/kotlin/no/novari/flyt/egrunnerverv/okonomi/domain/model/Supplier.kt), [`SupplierIdentity`](src/main/kotlin/no/novari/flyt/egrunnerverv/okonomi/domain/model/SupplierIdentity.kt) (sikrer én identitet), [`TenantId`](src/main/kotlin/no/novari/flyt/egrunnerverv/okonomi/domain/model/TenantId.kt). Maskering av sensitive felt via [`@LogMasked`](src/main/kotlin/no/novari/flyt/egrunnerverv/okonomi/domain/logging/LogMasked.kt) og [`toMaskedLogMap()`](src/main/kotlin/no/novari/flyt/egrunnerverv/okonomi/domain/logging/Extensions.kt).
+- **Outbound Infra (Visma)**: [`DefaultTenantGatewayResolver`](src/main/kotlin/no/novari/flyt/egrunnerverv/okonomi/infrastructure/tenant/DefaultTenantGatewayResolver.kt) ser opp adapter-navn i [`AdapterLeverandorProperties`](src/main/kotlin/no/novari/flyt/egrunnerverv/okonomi/infrastructure/config/AdapterLeverandorProperties.kt) og henter Spring-bean. [`VismaSupplierAdapter`](src/main/kotlin/no/novari/flyt/egrunnerverv/okonomi/infrastructure/outbound/visma/adapter/VismaSupplierAdapter.kt) oversetter Visma-feil til domeneunntak. [`VismaReskontroClient`](src/main/kotlin/no/novari/flyt/egrunnerverv/okonomi/infrastructure/outbound/visma/service/VismaReskontroClient.kt) håndterer REST-kall, OAuth2 client-credentials, retry (Spring Retry) og mapping til/fra XML via [`SupplierMapper`](src/main/kotlin/no/novari/flyt/egrunnerverv/okonomi/infrastructure/outbound/visma/mapper/SupplierMapper.kt).
+- **Konfig**: [`AdapterLeverandorProperties`](src/main/kotlin/no/novari/flyt/egrunnerverv/okonomi/infrastructure/config/AdapterLeverandorProperties.kt) mappe tenant → adapter. [`VismaProperties`](src/main/kotlin/no/novari/flyt/egrunnerverv/okonomi/infrastructure/outbound/visma/config/VismaProperties.kt) styrer base-URL, legacy-auth header, selskapsmapping (tenant → company), timeout og retry-parametere. [`RestClientConfig`](src/main/kotlin/no/novari/flyt/egrunnerverv/okonomi/infrastructure/outbound/visma/config/RestClientConfig.kt) bygger `RestClient` med XML-konverter, OAuth2 og tidsavgrensninger.
+
+## Validering og feil
+- DTO-validering: Regex på fødselsnummer/orgnr (kan være tomt) og krav om at kun én identifikator settes ([`SupplierIdentity.from`](src/main/kotlin/no/novari/flyt/egrunnerverv/okonomi/domain/model/SupplierIdentity.kt) kaster [`MissingIdentifierException`](src/main/kotlin/no/novari/flyt/egrunnerverv/okonomi/domain/error/SupplierIdentityExceptions.kt)/[`MultipleIdentifiersException`](src/main/kotlin/no/novari/flyt/egrunnerverv/okonomi/domain/error/SupplierIdentityExceptions.kt)).
+- Tenant-validering: [`TenantIdConverter`](src/main/kotlin/no/novari/flyt/egrunnerverv/okonomi/infrastructure/inbound/web/config/TenantIdConverter.kt) avviser ukjente/blanke tenants; [`DefaultTenantGatewayResolver`](src/main/kotlin/no/novari/flyt/egrunnerverv/okonomi/infrastructure/tenant/DefaultTenantGatewayResolver.kt) kaster hvis mapping eller gateway mangler.
+- Leverandørflyt: Visma-klienten kaster egne unntak for hente/opprette/manglende selskapsmapping; adapter oversetter til [`SupplierSyncException`](src/main/kotlin/no/novari/flyt/egrunnerverv/okonomi/domain/error/SupplierSyncException.kt)-typer. Global handler returnerer passende HTTP/feilkoder.
+- Fallback: Alle andre feil gir 500 med `UNKNOWN_ERROR`.
+
+## Logging
+- Strukturerte logger (Logstash) med maskering av annoterte felt; identiteter logges med stjerner der det er påkrevd. Hendelser rundt Visma-kall og selskapsoppslag logges med `kv(...)`.
+
+## Drift/videre arbeid
+- Tenant → adapter- og tenant → company-mapping må være komplett for alle tenants som skal bruke Visma, ellers feiler oppstart ([`AdapterConfigurationValidator`](src/main/kotlin/no/novari/flyt/egrunnerverv/okonomi/infrastructure/config/AdapterConfigurationValidator.kt)).
