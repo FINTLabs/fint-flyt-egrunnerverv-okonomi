@@ -1,0 +1,51 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: fintlabs-no
+
+resources:
+    - ../../../base
+
+labels:
+    -   pairs:
+            app.kubernetes.io/instance: fint-flyt-egrunnerverv-okonomi_fintlabs_no
+            fintlabs.no/org-id: fintlabs.no
+
+patches:
+    -   patch: |-
+            -   op: replace
+                path: "/spec/orgId"
+                value: "fintlabs.no"
+            -   op: replace
+                path: "/spec/ingress/basePath"
+                value: "/fintlabs-no/api/assignments"
+            -   op: replace
+                path: "/spec/url/hostname"
+                value: "flyt.novari.no"
+            -   op: replace
+                path: "/spec/url/basePath"
+                value: "/fintlabs-no"
+            -   op: replace
+                path: "/spec/observability/metrics/path"
+                value: "/fintlabs-no/actuator/prometheus"
+
+        target:
+            kind: Application
+            name: fint-flyt-egrunnerverv-okonomi
+
+    -   patch: |-
+            -   op: replace
+                path: "/spec/itemPath"
+                value: "vaults/aks-api-vault/items/fint-flyt-egrunnerverv-gateway-out"
+
+        target:
+            kind: OnePasswordItem
+            name: novari-flyt-egrunnerverv-dispatch-oauth2-client
+
+    -   patch: |-
+            -   op: replace
+                path: "/spec/itemPath"
+                value: "vaults/aks-api-vault/items/egrunnerverv-okonomi-visma-oauth2-client"
+
+        target:
+            kind: OnePasswordItem
+            name: novari-flyt-egrunnerverv-dispatch-oauth2-client

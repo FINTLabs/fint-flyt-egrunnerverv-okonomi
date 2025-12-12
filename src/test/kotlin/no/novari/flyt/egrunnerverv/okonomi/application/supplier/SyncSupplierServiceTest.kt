@@ -1,12 +1,14 @@
 package no.novari.flyt.egrunnerverv.okonomi.application.supplier
 
 import io.mockk.every
+import io.mockk.justRun
 import io.mockk.mockk
 import io.mockk.verify
 import no.novari.flyt.egrunnerverv.okonomi.application.tenant.TenantGatewayResolver
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.Supplier
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.SupplierIdentity
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.TenantId
+import no.novari.flyt.egrunnerverv.okonomi.domain.ports.out.EgrunnervervPort
 import no.novari.flyt.egrunnerverv.okonomi.domain.ports.out.SupplierGatewayPort
 import no.novari.flyt.egrunnerverv.okonomi.domain.ports.out.SupplierSyncResult
 import kotlin.test.Test
@@ -14,8 +16,9 @@ import kotlin.test.assertEquals
 
 class SyncSupplierServiceTest {
     private val resolver = mockk<TenantGatewayResolver>()
+    private val egrunnervervPort = mockk<EgrunnervervPort>()
     private val gateway = mockk<SupplierGatewayPort>()
-    private val service = SyncSupplierService(resolver)
+    private val service = SyncSupplierService(resolver, egrunnervervPort)
 
     private val supplier =
         Supplier(
@@ -33,11 +36,13 @@ class SyncSupplierServiceTest {
     fun `delegates to resolved gateway and returns result`() {
         every { resolver.resolve(tenant) } returns gateway
         every { gateway.getOrCreate(supplier, identity, tenant) } returns SupplierSyncResult.Created
+        justRun { egrunnervervPort.syncSupplier(SupplierSyncResult.Created, supplier, identity, tenant) }
 
         val result = service.getOrCreate(supplier, identity, tenant)
 
         assertEquals(SupplierSyncResult.Created, result)
         verify(exactly = 1) { resolver.resolve(tenant) }
         verify(exactly = 1) { gateway.getOrCreate(supplier, identity, tenant) }
+        verify(exactly = 1) { egrunnervervPort.syncSupplier(SupplierSyncResult.Created, supplier, identity, tenant) }
     }
 }

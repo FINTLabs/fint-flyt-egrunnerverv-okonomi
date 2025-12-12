@@ -6,6 +6,7 @@ import no.novari.flyt.egrunnerverv.okonomi.domain.model.Supplier
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.SupplierIdentity
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.TenantId
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.config.VismaProperties
+import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.error.VismaIdentifierTooLongException
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.error.VismaTenantToCompanyException
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.mapper.SupplierMapper
 import org.junit.jupiter.api.BeforeEach
@@ -29,9 +30,9 @@ class VismaReskontroClientTest {
 
     private val props =
         VismaProperties(
+            registrationId = "visma",
             baseUrl = "http://localhost",
             legacyAuth = "legacy",
-            oauth = VismaProperties.OAuthProps(tokenUrl = "", clientId = "", clientSecret = ""),
             company = VismaProperties.Company(byTenant = mapOf(TenantId("novari-no").id to "123")),
         )
 
@@ -104,12 +105,37 @@ class VismaReskontroClientTest {
     }
 
     @Test
+    fun `getCustomerSupplierByIdentifier fails when identifier is too long`() {
+        val missingProps =
+            VismaProperties(
+                registrationId = "visma",
+                baseUrl = "http://localhost",
+                legacyAuth = "legacy",
+                company = VismaProperties.Company(byTenant = emptyMap()),
+            )
+        val restClient = RestClient.builder().baseUrl(missingProps.baseUrl).build()
+        val localClient =
+            VismaReskontroClient(
+                restClient = restClient,
+                props = missingProps,
+                supplierMapper = SupplierMapper(),
+            )
+
+        assertFailsWith<VismaIdentifierTooLongException> {
+            localClient.getCustomerSupplierByIdentifier(
+                SupplierIdentity.OrgId("123456789012345678"),
+                TenantId("novari-no"),
+            )
+        }
+    }
+
+    @Test
     fun `getCustomerSupplierByIdentifier fails when company mapping missing`() {
         val missingProps =
             VismaProperties(
+                registrationId = "visma",
                 baseUrl = "http://localhost",
                 legacyAuth = "legacy",
-                oauth = VismaProperties.OAuthProps(tokenUrl = "", clientId = "", clientSecret = ""),
                 company = VismaProperties.Company(byTenant = emptyMap()),
             )
         val restClient = RestClient.builder().baseUrl(missingProps.baseUrl).build()

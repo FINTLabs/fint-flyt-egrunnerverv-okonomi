@@ -5,7 +5,7 @@
 - Tilbyr ett HTTP-endepunkt `POST /api/v1/egrunnerverv/okonomi/supplier` som mottar leverandørdata og en `X-Tenant`-header (se [controller](src/main/kotlin/no/novari/flyt/egrunnerverv/okonomi/infrastructure/inbound/web/SupplierController.kt)).
 - Validerer input (fødselsnummer/organisasjonsnummer-format, at kun ett av dem er oppgitt, felt påkrevd).
 - Oversetter `X-Tenant` til en adapter/gateway via konfig, og ruter videre til riktig leverandøradapter.
-- For Visma: forsøker først å hente leverandør med identifikator; hvis ikke funnet opprettes leverandør. Begge tilfeller gir `200 OK` uten body.
+- For Visma: henter leverandør med identifikator; tomt svar (200 OK med tom `<customerSuppliers>`) tolkes som “ikke funnet” og trigget opprettelse. Andre feil gir 500 med leverandørfeil.
 - Feilhåndtering gjøres med standardiserte `errorCode`/`errorMessage`-felter. Se feiltabell under.
 
 ## Feilkoder (HTTP + `errorCode`)
@@ -18,10 +18,11 @@
 - 500 `9999` – Uventet feil.
 
 ## Konfigurasjon (viktigste)
-Se [`src/main/resources/application.yaml`](src/main/resources/application.yaml)  for eksempelverdier.
-- `adapter.leverandor.by-tenant`: map fra tenant-id (headerverdi) til adapter-navn (f.eks. `visma`).
-- `adapter.adapters.visma.*`: base-url, legacy-auth-header, OAuth2-klient, selskapsmapping `company.by-tenant`, retry-oppsett.
-- `spring.security.oauth2.client.registration.visma`: client credentials for Visma.
+- Se [`src/main/resources/application.yaml`](src/main/resources/application.yaml) for ikke-sensitive standardverdier (tenant → adapter/company, retry).
+- Hemmelige verdier settes via miljøvariabler/secrets (OnePassword i Kubernetes). Verdiene beholder eksakt navn/casing fra 1Password (ingen auto-uppercasing):
+  - `spring.security.oauth2.client.registration.*` og `spring.security.oauth2.client.provider.*` for Visma og ServiceNow hentes fra secrets.
+  - `adapter.adapters.visma.*` (registration-id, base-url, legacy-auth) og `adapter.adapters.servicenow.*` hentes fra secrets/env-vars.
+- Lokalt: legg inn nødvendige verdier i [`src/main/resources/application-local-staging.yaml`](src/main/resources/application-local-staging.yaml) eller sett miljøvariabler tilsvarende.
 
 ## Kjøre lokalt
 - Bygg og tester: `./gradlew clean test`

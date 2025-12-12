@@ -2,40 +2,26 @@ spring:
   application:
     name: flyt.egrunnerverv.okonomi
 
-  security:
-      oauth2:
-          client:
-              registration:
-                  visma:
-                      authorization-grant-type: client_credentials
-                      client-id: BYTT_MEG_UT
-                      client-secret: BYTT_MEG_UT
-              provider:
-                  visma:
-                      token-uri: https://integrationtest.enterprise-stag.visma.no/authz/api/oauth/token/
-
   threads:
     virtual:
       enabled: true
 
 adapter:
-    leverandor:
+    supplier:
         by-tenant:
             novari-no: visma
 
     adapters:
         visma:
-            base-url: ""
-            legacy-auth: ""
-            oauth:
-                client-id: ""
-                client-secret: ""
-                token-url: ""
-
             company:
               by-tenant:
                 novari-no: 29
 
+            retry:
+                max-attempts: 5
+                initial-interval-ms: 500
+
+        servicenow:
             retry:
                 max-attempts: 5
                 initial-interval-ms: 500

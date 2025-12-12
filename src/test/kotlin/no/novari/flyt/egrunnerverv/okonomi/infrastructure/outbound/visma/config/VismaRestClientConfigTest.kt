@@ -19,21 +19,16 @@ import java.net.InetSocketAddress
 import java.time.Instant
 import kotlin.test.assertEquals
 
-class RestClientConfigTest {
-    private val config = RestClientConfig()
+class VismaRestClientConfigTest {
+    private val config = VismaRestClientConfig()
 
     @Test
     fun `vismaRestClient sets baseUrl and auth headers`() {
         val props =
             VismaProperties(
+                registrationId = "visma",
                 baseUrl = "https://example.com",
                 legacyAuth = "legacy-token",
-                oauth =
-                    VismaProperties.OAuthProps(
-                        tokenUrl = "https://token",
-                        clientId = "clientId",
-                        clientSecret = "clientSecret",
-                    ),
                 company = VismaProperties.Company(byTenant = mapOf("novari-no" to "visma")),
             )
         val xmlMapper = config.xmlMapper()

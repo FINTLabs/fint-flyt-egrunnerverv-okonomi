@@ -77,7 +77,7 @@ class VismaSupplierAdapterTest {
                 supplierIdentity = identity,
                 tenantId = tenantId,
             )
-        } throws VismaCreateSupplierException()
+        } throws VismaCreateSupplierException(tenantId)
 
         assertFailsWith<CreateSupplierException> {
             gateway.getOrCreate(supplier = supplier, supplierIdentity = identity, tenantId = tenantId)
@@ -86,7 +86,7 @@ class VismaSupplierAdapterTest {
 
     @Test
     fun `translates Visma get exception`() {
-        every { client.getCustomerSupplierByIdentifier(identity, tenantId) } throws VismaGetSupplierException()
+        every { client.getCustomerSupplierByIdentifier(identity, tenantId) } throws VismaGetSupplierException(tenantId)
 
         assertFailsWith<GetSupplierException> {
             gateway.getOrCreate(supplier, identity, tenantId)

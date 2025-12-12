@@ -7,18 +7,26 @@ sealed class VismaClientException(
     cause: Throwable? = null,
 ) : RuntimeException(message, cause)
 
-class VismaGetSupplierException :
-    VismaClientException(
-        "Kunne ikke hente leverandør i Visma. Prøv igjen senere eller kontakt FLYT om feilen vedvarer",
+class VismaGetSupplierException(
+    tenantId: TenantId,
+) : VismaClientException(
+        "Kunne ikke hente leverandør i Visma for tenant $tenantId. Prøv igjen senere eller kontakt FLYT om feilen vedvarer",
     )
 
-class VismaCreateSupplierException :
-    VismaClientException(
-        "Kunne ikke opprette leverandør i Visma. Prøv igjen senere eller kontakt FLYT om feilen vedvarer",
+class VismaCreateSupplierException(
+    tenantId: TenantId,
+) : VismaClientException(
+        "Kunne ikke opprette leverandør i Visma for tenant $tenantId. Prøv igjen senere eller kontakt FLYT om feilen vedvarer",
     )
 
 class VismaTenantToCompanyException(
     tenantId: TenantId,
 ) : VismaClientException(
         "Fant ingen selskapsmapping for tenant $tenantId",
+    )
+
+class VismaIdentifierTooLongException(
+    tenantId: TenantId,
+) : VismaClientException(
+        "Identifikator er for lang for Visma-lookup for tenant $tenantId",
     )

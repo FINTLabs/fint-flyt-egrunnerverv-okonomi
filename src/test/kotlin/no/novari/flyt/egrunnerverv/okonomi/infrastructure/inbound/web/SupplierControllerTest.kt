@@ -29,7 +29,7 @@ import kotlin.test.assertContains
 @Import(TenantIdConverter::class, GlobalExceptionHandler::class, SupplierControllerTest.StubConfig::class)
 @TestPropertySource(
     properties = [
-        "adapter.leverandor.by-tenant.novari-no=visma",
+        "adapter.supplier.by-tenant.novari-no=visma",
     ],
 )
 class SupplierControllerTest

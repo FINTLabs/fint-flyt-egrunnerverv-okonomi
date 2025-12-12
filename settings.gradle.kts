@@ -1,1 +1,1 @@
-rootProject.name = "flyt.egrunnerverv.okonomi"
+rootProject.name = "flyt-egrunnerverv-okonomi"

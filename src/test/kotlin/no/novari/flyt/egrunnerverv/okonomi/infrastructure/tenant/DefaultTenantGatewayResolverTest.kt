@@ -5,7 +5,7 @@ import no.novari.flyt.egrunnerverv.okonomi.domain.model.SupplierIdentity
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.TenantId
 import no.novari.flyt.egrunnerverv.okonomi.domain.ports.out.SupplierGatewayPort
 import no.novari.flyt.egrunnerverv.okonomi.domain.ports.out.SupplierSyncResult
-import no.novari.flyt.egrunnerverv.okonomi.infrastructure.config.AdapterLeverandorProperties
+import no.novari.flyt.egrunnerverv.okonomi.infrastructure.config.AdapterSupplierProperties
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -24,7 +24,7 @@ class DefaultTenantGatewayResolverTest {
         val gateway = StubGateway()
         val resolver =
             DefaultTenantGatewayResolver(
-                props = AdapterLeverandorProperties(byTenant = mapOf("novari-no" to "visma")),
+                props = AdapterSupplierProperties(byTenant = mapOf("novari-no" to "visma")),
                 gateways = mapOf("visma" to gateway),
             )
 
@@ -37,7 +37,7 @@ class DefaultTenantGatewayResolverTest {
     fun `resolve fails when mapping missing`() {
         val resolver =
             DefaultTenantGatewayResolver(
-                props = AdapterLeverandorProperties(byTenant = emptyMap()),
+                props = AdapterSupplierProperties(byTenant = emptyMap()),
                 gateways = emptyMap(),
             )
 
@@ -52,7 +52,7 @@ class DefaultTenantGatewayResolverTest {
     fun `resolve fails when bean name not found`() {
         val resolver =
             DefaultTenantGatewayResolver(
-                props = AdapterLeverandorProperties(byTenant = mapOf("novari-no" to "visma")),
+                props = AdapterSupplierProperties(byTenant = mapOf("novari-no" to "visma")),
                 gateways = emptyMap(),
             )
 

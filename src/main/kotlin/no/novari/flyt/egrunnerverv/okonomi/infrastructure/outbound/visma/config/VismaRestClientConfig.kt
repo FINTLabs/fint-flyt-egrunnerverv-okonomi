@@ -3,6 +3,8 @@ package no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.config
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.http.client.ClientHttpRequestFactoryBuilder
 import org.springframework.boot.http.client.ClientHttpRequestFactorySettings
 import org.springframework.context.annotation.Bean
@@ -19,18 +21,24 @@ import org.springframework.web.client.RestClient
 
 @Configuration
 @EnableRetry
-class RestClientConfig {
+@EnableConfigurationProperties(
+    VismaProperties::class,
+)
+class VismaRestClientConfig {
     @Bean
     fun xmlMapper(): ObjectMapper {
         return XmlMapper().registerKotlinModule()
     }
 
-    @Bean
-    fun authorizedClientManager(
-        repo: ClientRegistrationRepository,
-        repository: OAuth2AuthorizedClientRepository,
+    @Bean("vismaAuthorizedClientManager")
+    fun vismaAuthorizedClientManager(
+        clientRegistrationRepository: ClientRegistrationRepository,
+        oAuth2AuthorizedClientRepository: OAuth2AuthorizedClientRepository,
     ): OAuth2AuthorizedClientManager {
-        return DefaultOAuth2AuthorizedClientManager(repo, repository).apply {
+        return DefaultOAuth2AuthorizedClientManager(
+            clientRegistrationRepository,
+            oAuth2AuthorizedClientRepository,
+        ).apply {
             setAuthorizedClientProvider(ClientCredentialsOAuth2AuthorizedClientProvider())
         }
     }
@@ -39,17 +47,14 @@ class RestClientConfig {
     fun vismaRestClient(
         xmlMapper: ObjectMapper,
         props: VismaProperties,
-        manager: OAuth2AuthorizedClientManager,
+        @Qualifier("vismaAuthorizedClientManager") manager: OAuth2AuthorizedClientManager,
         builder: RestClient.Builder = RestClient.builder(),
     ): RestClient {
-        val connectTimeout = props.timeouts.connect
-        val readTimeout = props.timeouts.read
-
         val settings =
             ClientHttpRequestFactorySettings
                 .defaults()
-                .withConnectTimeout(connectTimeout)
-                .withReadTimeout(readTimeout)
+                .withConnectTimeout(props.timeouts.connect)
+                .withReadTimeout(props.timeouts.read)
 
         val requestFactory =
             ClientHttpRequestFactoryBuilder
@@ -63,7 +68,7 @@ class RestClientConfig {
             .requestInterceptor { req, body, exec ->
                 val auth =
                     OAuth2AuthorizeRequest
-                        .withClientRegistrationId("visma")
+                        .withClientRegistrationId(props.registrationId)
                         .principal("visma-client")
                         .build()
                 val client =

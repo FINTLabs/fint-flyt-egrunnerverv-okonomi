@@ -1,0 +1,32 @@
+spring:
+    security:
+        oauth2:
+            client:
+                registration:
+                    visma:
+                        client-id: test-client
+                        client-secret: test-secret
+                        authorization-grant-type: client_credentials
+                    servicenow:
+                        client-id: test-client
+                        client-secret: test-secret
+                        authorization-grant-type: password
+                provider:
+                    visma:
+                        token-uri: http://localhost/oauth2/token
+                    servicenow:
+                        token-uri: http://localhost/oauth2/token
+
+adapter:
+    adapters:
+        visma:
+            registration-id: visma
+            base-url: http://localhost
+            legacy-auth: ""
+
+        servicenow:
+            registration-id: servicenow
+            base-url: http://localhost
+            oauth2:
+                username: ""
+                password: ""

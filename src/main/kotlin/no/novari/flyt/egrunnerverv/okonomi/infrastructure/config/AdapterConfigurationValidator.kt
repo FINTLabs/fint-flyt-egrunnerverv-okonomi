@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Configuration
 
 @Configuration
 class AdapterConfigurationValidator(
-    private val adapterProps: AdapterLeverandorProperties,
+    private val adapterProps: AdapterSupplierProperties,
     private val vismaProps: VismaProperties,
 ) {
     private val logger = KotlinLogging.logger {}

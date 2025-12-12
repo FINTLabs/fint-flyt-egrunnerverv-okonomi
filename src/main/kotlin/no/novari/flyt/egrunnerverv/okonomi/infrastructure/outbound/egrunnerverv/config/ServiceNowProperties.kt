@@ -1,19 +1,19 @@
-package no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.config
+package no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.egrunnerverv.config
 
 import org.springframework.boot.context.properties.ConfigurationProperties
 import java.time.Duration
 
-@ConfigurationProperties("adapter.adapters.visma")
-data class VismaProperties(
+@ConfigurationProperties("adapter.adapters.servicenow")
+data class ServiceNowProperties(
     val registrationId: String,
     val baseUrl: String,
-    val legacyAuth: String,
-    val company: Company,
+    val oauth2: OAuth2Props,
     val timeouts: Timeouts = Timeouts(),
     val retry: Retry = Retry(),
 ) {
-    data class Company(
-        val byTenant: Map<String, String>,
+    data class OAuth2Props(
+        val username: String,
+        val password: String,
     )
 
     data class Timeouts(

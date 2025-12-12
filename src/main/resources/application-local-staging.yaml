@@ -1,0 +1,21 @@
+spring:
+    security:
+        oauth2:
+            client:
+                registration:
+                    visma:
+                        client-id: ""
+                        client-secret: ""
+                        authorization-grant-type: client_credentials
+
+                    servicenow:
+                        client-id: ""
+                        client-secret: ""
+                        authorization-grant-type: password
+
+                provider:
+                  visma:
+                      token-uri: ""
+
+                  servicenow:
+                      token-uri: ""

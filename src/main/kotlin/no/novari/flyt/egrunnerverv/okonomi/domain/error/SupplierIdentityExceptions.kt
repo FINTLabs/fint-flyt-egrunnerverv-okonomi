@@ -8,3 +8,8 @@ class MissingIdentifierException : DomainValidationException("Oppgi enten fødse
 
 class MultipleIdentifiersException :
     DomainValidationException("Oppgi bare én av delene – fødselsnummer eller organisasjonsnummer")
+
+class IdentifierTooLongException :
+    DomainValidationException(
+        "Identifikator er for lang",
+    )

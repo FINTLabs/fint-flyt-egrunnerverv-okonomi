@@ -5,6 +5,7 @@ import no.novari.flyt.egrunnerverv.okonomi.domain.error.CreateSupplierException
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.DomainValidationException
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.GenericSupplierException
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.GetSupplierException
+import no.novari.flyt.egrunnerverv.okonomi.domain.error.IdentifierTooLongException
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.MissingIdentifierException
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.MultipleIdentifiersException
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.SupplierSyncException
@@ -26,9 +27,10 @@ class GlobalExceptionHandler {
     @ExceptionHandler(DomainValidationException::class)
     fun handleDomainValidationException(ex: DomainValidationException): ResponseEntity<ErrorResponse> {
         val apiErrorCode =
-            when (ex) {
+            when(ex) {
                 is MissingIdentifierException -> ApiErrorCode.MISSING_FODSELSNUMMER_OR_ORGID
                 is MultipleIdentifiersException -> ApiErrorCode.MULTIPLE_IDENTIFIERS
+                is IdentifierTooLongException -> ApiErrorCode.IDENTIFIER_TOO_LONG
             }
         return ResponseEntity
             .status(HttpStatus.BAD_REQUEST)
@@ -75,7 +77,7 @@ class GlobalExceptionHandler {
             .body(
                 ErrorResponse(
                     errorCode =
-                        when (ex.rootCause) {
+                        when(ex.rootCause) {
                             is InvalidTenantException -> ApiErrorCode.INVALID_TENANT_IDENTIFIER.id
                             else -> ApiErrorCode.GENERIC_BAD_REQUEST.id
                         },
@@ -112,7 +114,7 @@ class GlobalExceptionHandler {
     fun handleSupplierSyncException(ex: SupplierSyncException): ResponseEntity<ErrorResponse> {
         val msg = requireNotNull(ex.message)
         val apiErrorCode =
-            when (ex) {
+            when(ex) {
                 is CreateSupplierException -> ApiErrorCode.CREATE_SUPPLIER_ERROR
                 is GenericSupplierException -> ApiErrorCode.GENERIC_SUPPLIER_ERROR
                 is GetSupplierException -> ApiErrorCode.GET_SUPPLIER_ERROR
@@ -138,7 +140,6 @@ class GlobalExceptionHandler {
             .body(
                 ErrorResponse(
                     errorCode = ApiErrorCode.UNKNOWN_ERROR.id,
-                    // Ikke lekk interne detaljer
                     errorMessage = "En uventet feil oppsto. Prøv igjen, eller kontakt FLYT hvis problemet fortsetter.",
                 ),
             )

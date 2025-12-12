@@ -10,6 +10,7 @@ import no.novari.flyt.egrunnerverv.okonomi.domain.model.TenantId
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.config.VismaProperties
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.error.VismaCreateSupplierException
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.error.VismaGetSupplierException
+import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.error.VismaIdentifierTooLongException
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.error.VismaTenantToCompanyException
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.mapper.SupplierMapper
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.model.SupplierType
@@ -44,6 +45,8 @@ class VismaReskontroClient(
     ): Supplier? {
         logGetCustomerSupplierByIdentifier(supplierIdentity, tenantId)
 
+        validateIdentifierLength(supplierIdentity, tenantId)
+
         val company = getCompanyFromTenant(tenantId)
 
         val xmlResponse =
@@ -57,34 +60,9 @@ class VismaReskontroClient(
                 }.accept(MediaType.TEXT_XML)
                 .retrieve()
                 .body<VUXml>()
-                ?: throw VismaGetSupplierException()
+                ?: throw VismaGetSupplierException(tenantId)
 
         return supplierMapper.mapSingleSupplier(xmlResponse)
-    }
-
-    private fun logGetCustomerSupplierByIdentifier(
-        supplierIdentity: SupplierIdentity,
-        tenantId: TenantId,
-    ) {
-        logger.atInfo {
-            message = "Henter leverandør fra Visma"
-            arguments =
-                arrayOf(
-                    kv("supplierIdentity", supplierIdentity.toMaskedLogMap()),
-                    kv("tenant", tenantId.id),
-                )
-        }
-    }
-
-    private fun getCompanyFromTenant(tenantId: TenantId): String {
-        return props.company.byTenant[tenantId.id]
-            ?: run {
-                logger.atWarn {
-                    message = "Fant ingen selskapsmapping for tenant"
-                    arguments = arrayOf(kv("tenant", tenantId))
-                }
-                throw VismaTenantToCompanyException(tenantId)
-            }
     }
 
     @Retryable(
@@ -100,6 +78,8 @@ class VismaReskontroClient(
         supplierIdentity: SupplierIdentity,
         tenantId: TenantId,
     ) {
+        validateIdentifierLength(supplierIdentity, tenantId)
+
         val company = getCompanyFromTenant(tenantId)
         val supplierType = SupplierType.LEVERANDOR // FIXME: Bestemmes av hvert fylke
 
@@ -121,7 +101,7 @@ class VismaReskontroClient(
                 .body(requestBody)
                 .retrieve()
                 .body<VUXmlStoreResponse>()
-                ?: throw VismaCreateSupplierException()
+                ?: throw VismaCreateSupplierException(tenantId)
 
         val result = response.customerSuppliers
 
@@ -163,11 +143,48 @@ class VismaReskontroClient(
                             kv("result", result),
                         )
                 }
+
+                throw VismaCreateSupplierException(tenantId)
             }
+        }
+    }
+
+    private fun logGetCustomerSupplierByIdentifier(
+        supplierIdentity: SupplierIdentity,
+        tenantId: TenantId,
+    ) {
+        logger.atInfo {
+            message = "Henter leverandør fra Visma"
+            arguments =
+                arrayOf(
+                    kv("supplierIdentity", supplierIdentity.toMaskedLogMap()),
+                    kv("tenant", tenantId.id),
+                )
+        }
+    }
+
+    private fun getCompanyFromTenant(tenantId: TenantId): String {
+        return props.company.byTenant[tenantId.id]
+            ?: run {
+                logger.atWarn {
+                    message = "Fant ingen selskapsmapping for tenant"
+                    arguments = arrayOf(kv("tenant", tenantId))
+                }
+                throw VismaTenantToCompanyException(tenantId)
+            }
+    }
+
+    private fun validateIdentifierLength(
+        identity: SupplierIdentity,
+        tenantId: TenantId,
+    ) {
+        if (identity.value.length >= MAX_IDENTIFIER_LENGTH) {
+            throw VismaIdentifierTooLongException(tenantId)
         }
     }
 
     companion object {
         private const val DIVISION = "0"
+        private const val MAX_IDENTIFIER_LENGTH = 12
     }
 }

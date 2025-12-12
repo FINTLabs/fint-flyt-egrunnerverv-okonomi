@@ -1,18 +1,18 @@
 package no.novari.flyt.egrunnerverv.okonomi.infrastructure.inbound.web.config
 
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.TenantId
-import no.novari.flyt.egrunnerverv.okonomi.infrastructure.config.AdapterLeverandorProperties
+import no.novari.flyt.egrunnerverv.okonomi.infrastructure.config.AdapterSupplierProperties
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.inbound.web.error.InvalidTenantException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class TenantIdConverterTest {
-    private val adapterLeverandorProperties: AdapterLeverandorProperties =
-        AdapterLeverandorProperties(
+    private val adapterSupplierProperties: AdapterSupplierProperties =
+        AdapterSupplierProperties(
             byTenant = mapOf("novari-no" to "novari"),
         )
-    private val converter = TenantIdConverter(adapterLeverandorProperties)
+    private val converter = TenantIdConverter(adapterSupplierProperties)
 
     @Test
     fun `convert returns tenant when key exists`() {
