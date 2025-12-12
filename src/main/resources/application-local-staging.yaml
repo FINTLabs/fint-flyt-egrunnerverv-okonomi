@@ -4,18 +4,32 @@ spring:
             client:
                 registration:
                     visma:
-                        client-id: ""
-                        client-secret: ""
+                        client-id: "client-id"
+                        client-secret: "client-secret"
                         authorization-grant-type: client_credentials
 
                     servicenow:
-                        client-id: ""
-                        client-secret: ""
+                        client-id: "client-id"
+                        client-secret: "client-secret"
                         authorization-grant-type: password
 
                 provider:
                   visma:
-                      token-uri: ""
+                      token-uri: "https://localhost"
 
                   servicenow:
-                      token-uri: ""
+                      token-uri: "https://localhost"
+
+adapter:
+    adapters:
+        visma:
+            registration-id: "local-visma"
+            base-url: ""
+            legacy-auth: ""
+
+        servicenow:
+            registration-id: "local-servicenow"
+            base-url: ""
+            oauth2:
+                username: "username"
+                password: "password"

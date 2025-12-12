@@ -1,10 +1,14 @@
 spring:
-  application:
-    name: flyt.egrunnerverv.okonomi
+    application:
+        name: flyt.egrunnerverv.okonomi
 
-  threads:
-    virtual:
-      enabled: true
+    threads:
+        virtual:
+            enabled: true
+
+    output:
+        ansi:
+            enabled: always
 
 adapter:
     supplier:
@@ -14,8 +18,8 @@ adapter:
     adapters:
         visma:
             company:
-              by-tenant:
-                novari-no: 29
+                by-tenant:
+                    novari-no: 29
 
             retry:
                 max-attempts: 5
@@ -25,8 +29,3 @@ adapter:
             retry:
                 max-attempts: 5
                 initial-interval-ms: 500
-
-logging:
-    structured:
-        format:
-            console: ecs
