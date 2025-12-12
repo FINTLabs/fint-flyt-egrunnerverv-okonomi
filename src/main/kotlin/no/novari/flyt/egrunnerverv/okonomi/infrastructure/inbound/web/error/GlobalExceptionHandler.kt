@@ -27,7 +27,7 @@ class GlobalExceptionHandler {
     @ExceptionHandler(DomainValidationException::class)
     fun handleDomainValidationException(ex: DomainValidationException): ResponseEntity<ErrorResponse> {
         val apiErrorCode =
-            when(ex) {
+            when (ex) {
                 is MissingIdentifierException -> ApiErrorCode.MISSING_FODSELSNUMMER_OR_ORGID
                 is MultipleIdentifiersException -> ApiErrorCode.MULTIPLE_IDENTIFIERS
                 is IdentifierTooLongException -> ApiErrorCode.IDENTIFIER_TOO_LONG
@@ -77,7 +77,7 @@ class GlobalExceptionHandler {
             .body(
                 ErrorResponse(
                     errorCode =
-                        when(ex.rootCause) {
+                        when (ex.rootCause) {
                             is InvalidTenantException -> ApiErrorCode.INVALID_TENANT_IDENTIFIER.id
                             else -> ApiErrorCode.GENERIC_BAD_REQUEST.id
                         },
@@ -114,7 +114,7 @@ class GlobalExceptionHandler {
     fun handleSupplierSyncException(ex: SupplierSyncException): ResponseEntity<ErrorResponse> {
         val msg = requireNotNull(ex.message)
         val apiErrorCode =
-            when(ex) {
+            when (ex) {
                 is CreateSupplierException -> ApiErrorCode.CREATE_SUPPLIER_ERROR
                 is GenericSupplierException -> ApiErrorCode.GENERIC_SUPPLIER_ERROR
                 is GetSupplierException -> ApiErrorCode.GET_SUPPLIER_ERROR
