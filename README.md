@@ -27,6 +27,7 @@
 ## Kjøre lokalt
 - Bygg og tester: `./gradlew clean test`
 - Starte app (lokalt): `./gradlew bootRun`
+- Lokal Kafka for profilen `local-staging`: `docker compose up -d` (stopp med `down`). Broker eksponeres på `localhost:9092` og auto-creation av topics er aktivert.
 - Endepunkt (eksempel):
   ```bash
   curl -X POST http://localhost:8080/api/v1/egrunnerverv/okonomi/supplier \

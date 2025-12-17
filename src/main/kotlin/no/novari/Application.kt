@@ -1,4 +1,4 @@
-package no.novari.flyt.egrunnerverv.okonomi
+package no.novari
 
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.config.AdapterSupplierProperties
 import org.springframework.boot.autoconfigure.SpringBootApplication

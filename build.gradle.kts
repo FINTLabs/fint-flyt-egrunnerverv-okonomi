@@ -18,6 +18,10 @@ java {
 
 repositories {
     mavenCentral()
+    maven {
+        url = uri("https://repo.fintlabs.no/releases")
+    }
+    mavenLocal()
 }
 
 dependencies {
@@ -27,6 +31,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.retry:spring-retry")
+
+    implementation("no.novari:flyt-web-resource-server:2.0.0-rc-7")
 
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-xml")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")

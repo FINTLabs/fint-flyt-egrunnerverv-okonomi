@@ -20,6 +20,9 @@ spring:
                   servicenow:
                       token-uri: "https://localhost"
 
+    kafka:
+        bootstrap-servers: localhost:9092
+
 adapter:
     adapters:
         visma:
@@ -33,3 +36,7 @@ adapter:
             oauth2:
                 username: "username"
                 password: "password"
+
+novari:
+    kafka:
+        default-replicas: 1

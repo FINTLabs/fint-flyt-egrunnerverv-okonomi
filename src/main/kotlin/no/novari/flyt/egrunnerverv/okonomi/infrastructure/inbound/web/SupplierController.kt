@@ -23,7 +23,7 @@ class SupplierController(
     @PostMapping
     fun getOrCreateSupplier(
         @Valid @RequestBody supplier: SupplierRequest,
-        @RequestHeader("X-Tenant") tenantHeader: String, // TODO: Get tenant from a proper place
+        @RequestHeader("X-Tenant") tenantHeader: String, // TODO: Get tenant from a proper place,
     ): ResponseEntity<Void> {
         val tenantId = tenantIdConverter.convert(tenantHeader)
         val syncResult =
@@ -33,7 +33,7 @@ class SupplierController(
                 tenantId = tenantId,
             )
 
-        return when (syncResult) {
+        return when(syncResult) {
             SupplierSyncResult.Created -> ResponseEntity.ok().build()
             SupplierSyncResult.Updated -> ResponseEntity.ok().build()
         }
