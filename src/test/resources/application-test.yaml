@@ -30,3 +30,7 @@ adapter:
             oauth2:
                 username: ""
                 password: ""
+
+novari:
+    kafka:
+        default-replicas: 1
