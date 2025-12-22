@@ -37,122 +37,122 @@ import kotlin.test.assertContains
     ],
 )
 class SupplierControllerTest
-@Autowired
-constructor(
-    private val mockMvc: MockMvc,
-    private val objectMapper: ObjectMapper,
-) {
-    @MockitoBean
-    private lateinit var sourceApplicationAuthorizationRequestService: SourceApplicationAuthorizationRequestService
+    @Autowired
+    constructor(
+        private val mockMvc: MockMvc,
+        private val objectMapper: ObjectMapper,
+    ) {
+        @MockitoBean
+        private lateinit var sourceApplicationAuthorizationRequestService: SourceApplicationAuthorizationRequestService
 
-    @MockitoBean
-    private lateinit var sourceApplicationAuthorityMappingService: SourceApplicationAuthorityMappingService
+        @MockitoBean
+        private lateinit var sourceApplicationAuthorityMappingService: SourceApplicationAuthorityMappingService
 
-    @TestConfiguration
-    class StubConfig {
-        @Bean
-        fun syncSupplierUseCase(): SyncSupplierUseCase {
-            return object : SyncSupplierUseCase {
-                override fun getOrCreate(
-                    supplier: Supplier,
-                    supplierIdentity: SupplierIdentity,
-                    tenantId: TenantId,
-                ): SupplierSyncResult {
-                    return SupplierSyncResult.Created
+        @TestConfiguration
+        class StubConfig {
+            @Bean
+            fun syncSupplierUseCase(): SyncSupplierUseCase {
+                return object : SyncSupplierUseCase {
+                    override fun getOrCreate(
+                        supplier: Supplier,
+                        supplierIdentity: SupplierIdentity,
+                        tenantId: TenantId,
+                    ): SupplierSyncResult {
+                        return SupplierSyncResult.Created
+                    }
                 }
             }
         }
-    }
 
-    private fun validRequest(
-        fnr: String? = null,
-        orgId: String? = "123456789",
-    ): SupplierRequest =
-        SupplierRequest(
-            fodselsNummer = fnr,
-            orgId = orgId,
-            name = "Leverandør AS",
-            kontoNummer = "1234.56.78901",
-            street = "Gate 1",
-            zip = "0010",
-            city = "Oslo",
-            email = "post@test.no",
-        )
+        private fun validRequest(
+            fnr: String? = null,
+            orgId: String? = "123456789",
+        ): SupplierRequest =
+            SupplierRequest(
+                fodselsNummer = fnr,
+                orgId = orgId,
+                name = "Leverandør AS",
+                kontoNummer = "1234.56.78901",
+                street = "Gate 1",
+                zip = "0010",
+                city = "Oslo",
+                email = "post@test.no",
+            )
 
-    @Test
-    fun `returns ok when leverandor is created`() {
-        mockMvc
-            .post("/api/v1/egrunnerverv/okonomi/org/999999999/supplier") {
-                contentType = MediaType.APPLICATION_JSON
-                content = objectMapper.writeValueAsString(validRequest())
-            }.andExpect {
-                status { isOk() }
-            }
-    }
-
-    @Test
-    fun `returns bad request when both identifiers missing`() {
-        mockMvc
-            .post("/api/v1/egrunnerverv/okonomi/org/999999999/supplier") {
-                contentType = MediaType.APPLICATION_JSON
-                content = objectMapper.writeValueAsString(validRequest(fnr = "", orgId = ""))
-            }.andExpect {
-                status { isBadRequest() }
-                jsonPath("$.error_code") { value(ApiErrorCode.MISSING_FODSELSNUMMER_OR_ORGID.id) }
-            }
-    }
-
-    @Test
-    fun `returns bad request when both identifiers provided`() {
-        mockMvc
-            .post("/api/v1/egrunnerverv/okonomi/org/999999999/supplier") {
-                contentType = MediaType.APPLICATION_JSON
-                content = objectMapper.writeValueAsString(validRequest(fnr = "12345678901", orgId = "123456789"))
-            }.andExpect {
-                status { isBadRequest() }
-                jsonPath("$.error_code") { value(ApiErrorCode.MULTIPLE_IDENTIFIERS.id) }
-            }
-    }
-
-    @Test
-    fun `returns validation error on invalid orgId`() {
-        mockMvc
-            .post("/api/v1/egrunnerverv/okonomi/org/999999999/supplier") {
-                contentType = MediaType.APPLICATION_JSON
-                content = objectMapper.writeValueAsString(validRequest(orgId = "abc"))
-            }.andExpect {
-                status { isBadRequest() }
-                jsonPath("$.error_code") { value(ApiErrorCode.GENERIC_BAD_REQUEST.id) }
-            }
-    }
-
-    @Test
-    fun `returns invalid tenant error when orgNo in path is unknown`() {
-        val response =
+        @Test
+        fun `returns ok when leverandor is created`() {
             mockMvc
-                .post("/api/v1/egrunnerverv/okonomi/org/987654321/supplier") {
+                .post("/api/v1/egrunnerverv/okonomi/org/999999999/supplier") {
+                    contentType = MediaType.APPLICATION_JSON
+                    content = objectMapper.writeValueAsString(validRequest())
+                }.andExpect {
+                    status { isOk() }
+                }
+        }
+
+        @Test
+        fun `returns bad request when both identifiers missing`() {
+            mockMvc
+                .post("/api/v1/egrunnerverv/okonomi/org/999999999/supplier") {
+                    contentType = MediaType.APPLICATION_JSON
+                    content = objectMapper.writeValueAsString(validRequest(fnr = "", orgId = ""))
+                }.andExpect {
+                    status { isBadRequest() }
+                    jsonPath("$.error_code") { value(ApiErrorCode.MISSING_FODSELSNUMMER_OR_ORGID.id) }
+                }
+        }
+
+        @Test
+        fun `returns bad request when both identifiers provided`() {
+            mockMvc
+                .post("/api/v1/egrunnerverv/okonomi/org/999999999/supplier") {
+                    contentType = MediaType.APPLICATION_JSON
+                    content = objectMapper.writeValueAsString(validRequest(fnr = "12345678901", orgId = "123456789"))
+                }.andExpect {
+                    status { isBadRequest() }
+                    jsonPath("$.error_code") { value(ApiErrorCode.MULTIPLE_IDENTIFIERS.id) }
+                }
+        }
+
+        @Test
+        fun `returns validation error on invalid orgId`() {
+            mockMvc
+                .post("/api/v1/egrunnerverv/okonomi/org/999999999/supplier") {
+                    contentType = MediaType.APPLICATION_JSON
+                    content = objectMapper.writeValueAsString(validRequest(orgId = "abc"))
+                }.andExpect {
+                    status { isBadRequest() }
+                    jsonPath("$.error_code") { value(ApiErrorCode.GENERIC_BAD_REQUEST.id) }
+                }
+        }
+
+        @Test
+        fun `returns invalid tenant error when orgNo in path is unknown`() {
+            val response =
+                mockMvc
+                    .post("/api/v1/egrunnerverv/okonomi/org/987654321/supplier") {
+                        contentType = MediaType.APPLICATION_JSON
+                        content = objectMapper.writeValueAsString(validRequest())
+                    }.andExpect {
+                        status { isBadRequest() }
+                        jsonPath("$.error_code") { value(ApiErrorCode.INVALID_ORGANIZATION_NUMBER.id) }
+                    }.andReturn()
+                    .response
+                    .contentAsString
+
+            val error = objectMapper.readValue(response, ErrorResponse::class.java)
+            assertContains(error.errorMessage, "Ukjent orgNo '987654321'. Kontroller {orgNo} i path.")
+        }
+
+        @Test
+        fun `returns bad request when orgNo is not numeric`() {
+            mockMvc
+                .post("/api/v1/egrunnerverv/okonomi/org/abc/supplier") {
                     contentType = MediaType.APPLICATION_JSON
                     content = objectMapper.writeValueAsString(validRequest())
                 }.andExpect {
                     status { isBadRequest() }
-                    jsonPath("$.error_code") { value(ApiErrorCode.INVALID_ORGANIZATION_NUMBER.id) }
-                }.andReturn()
-                .response
-                .contentAsString
-
-        val error = objectMapper.readValue(response, ErrorResponse::class.java)
-        assertContains(error.errorMessage, "Ukjent orgNo '987654321'. Kontroller {orgNo} i path.")
+                    jsonPath("$.error_code") { value(ApiErrorCode.GENERIC_BAD_REQUEST.id) }
+                }
+        }
     }
-
-    @Test
-    fun `returns bad request when orgNo is not numeric`() {
-        mockMvc
-            .post("/api/v1/egrunnerverv/okonomi/org/abc/supplier") {
-                contentType = MediaType.APPLICATION_JSON
-                content = objectMapper.writeValueAsString(validRequest())
-            }.andExpect {
-                status { isBadRequest() }
-                jsonPath("$.error_code") { value(ApiErrorCode.GENERIC_BAD_REQUEST.id) }
-            }
-    }
-}

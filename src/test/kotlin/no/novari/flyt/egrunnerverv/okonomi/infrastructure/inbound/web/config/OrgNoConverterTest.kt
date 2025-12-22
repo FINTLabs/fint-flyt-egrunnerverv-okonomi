@@ -27,5 +27,4 @@ class OrgNoConverterTest {
             converter.convert(123456789L)
         }
     }
-
 }

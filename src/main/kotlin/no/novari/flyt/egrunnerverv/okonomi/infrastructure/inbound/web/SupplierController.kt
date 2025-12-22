@@ -33,7 +33,7 @@ class SupplierController(
                 tenantId = tenantId,
             )
 
-        return when(syncResult) {
+        return when (syncResult) {
             SupplierSyncResult.Created -> ResponseEntity.ok().build()
             SupplierSyncResult.Updated -> ResponseEntity.ok().build()
         }

@@ -81,7 +81,7 @@ class GlobalExceptionHandler {
                             is InvalidOrganizationNumberException -> ApiErrorCode.INVALID_ORGANIZATION_NUMBER.id
                             else -> ApiErrorCode.GENERIC_BAD_REQUEST.id
                         },
-                    errorMessage = ex.rootCause?.message ?: ex.cause?.message ?: ex.message,
+                    errorMessage = requireNotNull(ex.rootCause?.message ?: ex.cause?.message ?: ex.message),
                 ),
             )
     }
