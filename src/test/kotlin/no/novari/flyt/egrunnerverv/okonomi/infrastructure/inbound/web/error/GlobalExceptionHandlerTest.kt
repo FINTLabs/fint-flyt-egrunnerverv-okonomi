@@ -3,108 +3,169 @@ package no.novari.flyt.egrunnerverv.okonomi.infrastructure.inbound.web.error
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.CreateSupplierException
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.GenericSupplierException
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.GetSupplierException
+import no.novari.flyt.egrunnerverv.okonomi.domain.error.IdentifierTooLongException
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.MissingIdentifierException
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.MultipleIdentifiersException
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.TenantToCompanyException
+import no.novari.flyt.egrunnerverv.okonomi.infrastructure.inbound.web.dto.ErrorResponse
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.tenant.MissingGatewayBeanException
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.tenant.NoAdapterMappingException
-import org.junit.jupiter.api.Test
 import org.springframework.core.MethodParameter
+import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
 import org.springframework.validation.BeanPropertyBindingResult
 import org.springframework.validation.ObjectError
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
-import java.lang.reflect.Method
-import kotlin.reflect.full.memberFunctions
-import kotlin.reflect.jvm.javaMethod
+import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 
 class GlobalExceptionHandlerTest {
     private val handler = GlobalExceptionHandler()
 
     @Test
-    fun `maps NoAdapterMappingException to internal server error`() {
-        val response = handler.handleNoAdapterMapping(NoAdapterMappingException("novari-no"))
+    fun `handleDomainValidationException maps missing identifier`() {
+        val response = handler.handleDomainValidationException(MissingIdentifierException())
 
-        assertEquals(500, response.statusCode.value())
-        val body = requireNotNull(response.body)
-        assertEquals(ApiErrorCode.MISSING_ADAPTER_MAPPING.id, body.errorCode)
+        assertError(response, HttpStatus.BAD_REQUEST, ApiErrorCode.MISSING_FODSELSNUMMER_OR_ORGID)
     }
 
     @Test
-    fun `maps MissingGatewayBeanException to internal server error`() {
-        val response = handler.handleMissingGatewayBean(MissingGatewayBeanException("visma"))
+    fun `handleDomainValidationException maps multiple identifiers`() {
+        val response = handler.handleDomainValidationException(MultipleIdentifiersException())
 
-        assertEquals(500, response.statusCode.value())
-        val body = requireNotNull(response.body)
-        assertEquals(ApiErrorCode.MISSING_GATEWAY_BEAN.id, body.errorCode)
+        assertError(response, HttpStatus.BAD_REQUEST, ApiErrorCode.MULTIPLE_IDENTIFIERS)
     }
 
     @Test
-    fun `maps domain validation exceptions`() {
-        val missing = handler.handleDomainValidationException(MissingIdentifierException())
-        val multiple = handler.handleDomainValidationException(MultipleIdentifiersException())
+    fun `handleDomainValidationException maps identifier too long`() {
+        val response = handler.handleDomainValidationException(IdentifierTooLongException())
 
-        assertEquals(ApiErrorCode.MISSING_FODSELSNUMMER_OR_ORGID.id, requireNotNull(missing.body).errorCode)
-        assertEquals(ApiErrorCode.MULTIPLE_IDENTIFIERS.id, requireNotNull(multiple.body).errorCode)
+        assertError(response, HttpStatus.BAD_REQUEST, ApiErrorCode.IDENTIFIER_TOO_LONG)
     }
 
     @Test
-    fun `maps MethodArgumentNotValidException`() {
-        val bindingResult = BeanPropertyBindingResult(Any(), "payload")
-        bindingResult.addError(ObjectError("payload", "Ugyldig input"))
-        val ex =
-            MethodArgumentNotValidException(
-                MethodParameter.forExecutable(dummyMethodWithParam(), 0),
-                bindingResult,
-            )
+    fun `handleValidation returns generic bad request with combined message`() {
+        val bindingResult = BeanPropertyBindingResult(Any(), "request")
+        bindingResult.addError(ObjectError("request", "first error"))
+        bindingResult.addError(ObjectError("request", "second error"))
+        val exception = MethodArgumentNotValidException(methodParameter(), bindingResult)
 
-        val response = handler.handleValidation(ex)
+        val response = handler.handleValidation(exception)
 
-        assertEquals(ApiErrorCode.GENERIC_BAD_REQUEST.id, requireNotNull(response.body).errorCode)
+        assertError(response, HttpStatus.BAD_REQUEST, ApiErrorCode.GENERIC_BAD_REQUEST)
+        assertEquals("first error; second error", response.body?.errorMessage)
     }
 
     @Test
-    fun `maps MethodArgumentTypeMismatchException to generic bad request`() {
-        val ex =
+    fun `handleInvalidOrganizationNumber returns bad request with org number code`() {
+        val response = handler.handleInvalidOrganizationNumber(InvalidOrganizationNumberException(123L))
+
+        assertError(response, HttpStatus.BAD_REQUEST, ApiErrorCode.INVALID_ORGANIZATION_NUMBER)
+    }
+
+    @Test
+    fun `handleMethodArgumentTypeMismatch maps invalid org number`() {
+        val exception =
             MethodArgumentTypeMismatchException(
                 "abc",
-                String::class.java,
-                "field",
-                MethodParameter.forExecutable(dummyMethodWithParam(), 0),
-                IllegalArgumentException("bad type"),
+                Long::class.java,
+                "orgNo",
+                methodParameter(),
+                InvalidOrganizationNumberException(123L),
             )
 
-        val response = handler.handleMethodArgumentTypeMismatch(ex)
+        val response = handler.handleMethodArgumentTypeMismatch(exception)
 
-        assertEquals(ApiErrorCode.GENERIC_BAD_REQUEST.id, requireNotNull(response.body).errorCode)
+        assertError(response, HttpStatus.BAD_REQUEST, ApiErrorCode.INVALID_ORGANIZATION_NUMBER)
     }
 
     @Test
-    fun `maps SupplierSyncException variants`() {
-        val create = handler.handleSupplierSyncException(CreateSupplierException())
-        val get = handler.handleSupplierSyncException(GetSupplierException())
-        val orgToCompany = handler.handleSupplierSyncException(TenantToCompanyException())
-        val generic = handler.handleSupplierSyncException(GenericSupplierException("fail"))
+    fun `handleMethodArgumentTypeMismatch maps generic mismatch`() {
+        val exception =
+            MethodArgumentTypeMismatchException(
+                "abc",
+                Long::class.java,
+                "orgNo",
+                methodParameter(),
+                NumberFormatException("For input string: abc"),
+            )
 
-        assertEquals(ApiErrorCode.CREATE_SUPPLIER_ERROR.id, requireNotNull(create.body).errorCode)
-        assertEquals(ApiErrorCode.GET_SUPPLIER_ERROR.id, requireNotNull(get.body).errorCode)
-        assertEquals(ApiErrorCode.TENANT_TO_COMPANY_ERROR.id, requireNotNull(orgToCompany.body).errorCode)
-        assertEquals(ApiErrorCode.GENERIC_SUPPLIER_ERROR.id, requireNotNull(generic.body).errorCode)
+        val response = handler.handleMethodArgumentTypeMismatch(exception)
+
+        assertError(response, HttpStatus.BAD_REQUEST, ApiErrorCode.GENERIC_BAD_REQUEST)
     }
 
     @Test
-    fun `maps generic exception`() {
-        val response = handler.handleGeneric(RuntimeException("oops"))
+    fun `handleNoAdapterMapping returns 500 with missing adapter mapping code`() {
+        val response = handler.handleNoAdapterMapping(NoAdapterMappingException("novari-no"))
 
-        assertEquals(ApiErrorCode.UNKNOWN_ERROR.id, requireNotNull(response.body).errorCode)
+        assertError(response, HttpStatus.INTERNAL_SERVER_ERROR, ApiErrorCode.MISSING_ADAPTER_MAPPING)
     }
 
-    private fun dummyMethodWithParam(): Method =
-        Dummy::class.memberFunctions.first { it.name == "dummyWithParam" }.javaMethod!!
+    @Test
+    fun `handleMissingGatewayBean returns 500 with missing gateway bean code`() {
+        val response = handler.handleMissingGatewayBean(MissingGatewayBeanException("visma"))
 
-    private class Dummy {
-        @Suppress("unused")
-        fun dummyWithParam(value: String = "") {}
+        assertError(response, HttpStatus.INTERNAL_SERVER_ERROR, ApiErrorCode.MISSING_GATEWAY_BEAN)
+    }
+
+    @Test
+    fun `handleSupplierSyncException maps create supplier`() {
+        val response = handler.handleSupplierSyncException(CreateSupplierException())
+
+        assertError(response, HttpStatus.INTERNAL_SERVER_ERROR, ApiErrorCode.CREATE_SUPPLIER_ERROR)
+    }
+
+    @Test
+    fun `handleSupplierSyncException maps generic supplier`() {
+        val response = handler.handleSupplierSyncException(GenericSupplierException("boom"))
+
+        assertError(response, HttpStatus.INTERNAL_SERVER_ERROR, ApiErrorCode.GENERIC_SUPPLIER_ERROR)
+    }
+
+    @Test
+    fun `handleSupplierSyncException maps get supplier`() {
+        val response = handler.handleSupplierSyncException(GetSupplierException())
+
+        assertError(response, HttpStatus.INTERNAL_SERVER_ERROR, ApiErrorCode.GET_SUPPLIER_ERROR)
+    }
+
+    @Test
+    fun `handleSupplierSyncException maps tenant to company`() {
+        val response = handler.handleSupplierSyncException(TenantToCompanyException())
+
+        assertError(response, HttpStatus.INTERNAL_SERVER_ERROR, ApiErrorCode.TENANT_TO_COMPANY_ERROR)
+    }
+
+    @Test
+    fun `handleGeneric returns unknown error`() {
+        val response = handler.handleGeneric(Exception("boom"))
+
+        assertError(response, HttpStatus.INTERNAL_SERVER_ERROR, ApiErrorCode.UNKNOWN_ERROR)
+        assertEquals(response.body?.errorMessage?.contains("En uventet feil oppsto"), true)
+    }
+
+    private fun methodParameter(): MethodParameter {
+        val method = DummyController::class.java.getDeclaredMethod("handle", Long::class.javaPrimitiveType)
+        return MethodParameter(method, 0)
+    }
+
+    private fun assertError(
+        response: ResponseEntity<ErrorResponse>,
+        status: HttpStatus,
+        code: ApiErrorCode,
+    ) {
+        assertEquals(status, response.statusCode)
+        assertEquals(code.id, response.body?.errorCode)
+        assertNotNull(response.body?.errorMessage)
+    }
+
+    private class DummyController {
+        @Suppress("UNUSED_PARAMETER")
+        fun handle(orgNo: Long) {
+            // Used to construct MethodParameter for tests.
+        }
     }
 }

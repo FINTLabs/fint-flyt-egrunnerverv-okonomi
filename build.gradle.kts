@@ -32,7 +32,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.retry:spring-retry")
 
-    implementation("no.novari:flyt-web-resource-server:2.0.0-rc-7")
+    implementation("no.novari:flyt-web-resource-server:2.0.0")
 
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-xml")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")

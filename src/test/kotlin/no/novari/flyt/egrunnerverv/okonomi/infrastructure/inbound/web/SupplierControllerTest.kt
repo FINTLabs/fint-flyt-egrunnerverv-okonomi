@@ -6,7 +6,7 @@ import no.novari.flyt.egrunnerverv.okonomi.domain.model.Supplier
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.SupplierIdentity
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.TenantId
 import no.novari.flyt.egrunnerverv.okonomi.domain.ports.out.SupplierSyncResult
-import no.novari.flyt.egrunnerverv.okonomi.infrastructure.inbound.web.config.TenantIdConverter
+import no.novari.flyt.egrunnerverv.okonomi.infrastructure.inbound.web.config.OrgNoConverter
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.inbound.web.dto.ErrorResponse
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.inbound.web.dto.SupplierRequest
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.inbound.web.error.ApiErrorCode
@@ -29,122 +29,130 @@ import kotlin.test.assertContains
 
 @WebMvcTest(controllers = [SupplierController::class])
 @AutoConfigureMockMvc(addFilters = false)
-@Import(TenantIdConverter::class, GlobalExceptionHandler::class, SupplierControllerTest.StubConfig::class)
+@Import(OrgNoConverter::class, GlobalExceptionHandler::class, SupplierControllerTest.StubConfig::class)
 @TestPropertySource(
     properties = [
+        "adapter.supplier.by-org-no.999999999=novari-no",
         "adapter.supplier.by-tenant.novari-no=visma",
     ],
 )
 class SupplierControllerTest
-    @Autowired
-    constructor(
-        private val mockMvc: MockMvc,
-        private val objectMapper: ObjectMapper,
-    ) {
-        @MockitoBean
-        private lateinit var sourceApplicationAuthorizationRequestService: SourceApplicationAuthorizationRequestService
+@Autowired
+constructor(
+    private val mockMvc: MockMvc,
+    private val objectMapper: ObjectMapper,
+) {
+    @MockitoBean
+    private lateinit var sourceApplicationAuthorizationRequestService: SourceApplicationAuthorizationRequestService
 
-        @MockitoBean
-        private lateinit var sourceApplicationAuthorityMappingService: SourceApplicationAuthorityMappingService
+    @MockitoBean
+    private lateinit var sourceApplicationAuthorityMappingService: SourceApplicationAuthorityMappingService
 
-        @TestConfiguration
-        class StubConfig {
-            @Bean
-            fun syncSupplierUseCase(): SyncSupplierUseCase {
-                return object : SyncSupplierUseCase {
-                    override fun getOrCreate(
-                        supplier: Supplier,
-                        supplierIdentity: SupplierIdentity,
-                        tenantId: TenantId,
-                    ): SupplierSyncResult {
-                        return SupplierSyncResult.Created
-                    }
+    @TestConfiguration
+    class StubConfig {
+        @Bean
+        fun syncSupplierUseCase(): SyncSupplierUseCase {
+            return object : SyncSupplierUseCase {
+                override fun getOrCreate(
+                    supplier: Supplier,
+                    supplierIdentity: SupplierIdentity,
+                    tenantId: TenantId,
+                ): SupplierSyncResult {
+                    return SupplierSyncResult.Created
                 }
             }
         }
+    }
 
-        private fun validRequest(
-            fnr: String? = null,
-            orgId: String? = "123456789",
-        ): SupplierRequest =
-            SupplierRequest(
-                fodselsNummer = fnr,
-                orgId = orgId,
-                name = "Leverandør AS",
-                kontoNummer = "1234.56.78901",
-                street = "Gate 1",
-                zip = "0010",
-                city = "Oslo",
-                email = "post@test.no",
-            )
+    private fun validRequest(
+        fnr: String? = null,
+        orgId: String? = "123456789",
+    ): SupplierRequest =
+        SupplierRequest(
+            fodselsNummer = fnr,
+            orgId = orgId,
+            name = "Leverandør AS",
+            kontoNummer = "1234.56.78901",
+            street = "Gate 1",
+            zip = "0010",
+            city = "Oslo",
+            email = "post@test.no",
+        )
 
-        @Test
-        fun `returns ok when leverandor is created`() {
+    @Test
+    fun `returns ok when leverandor is created`() {
+        mockMvc
+            .post("/api/v1/egrunnerverv/okonomi/org/999999999/supplier") {
+                contentType = MediaType.APPLICATION_JSON
+                content = objectMapper.writeValueAsString(validRequest())
+            }.andExpect {
+                status { isOk() }
+            }
+    }
+
+    @Test
+    fun `returns bad request when both identifiers missing`() {
+        mockMvc
+            .post("/api/v1/egrunnerverv/okonomi/org/999999999/supplier") {
+                contentType = MediaType.APPLICATION_JSON
+                content = objectMapper.writeValueAsString(validRequest(fnr = "", orgId = ""))
+            }.andExpect {
+                status { isBadRequest() }
+                jsonPath("$.error_code") { value(ApiErrorCode.MISSING_FODSELSNUMMER_OR_ORGID.id) }
+            }
+    }
+
+    @Test
+    fun `returns bad request when both identifiers provided`() {
+        mockMvc
+            .post("/api/v1/egrunnerverv/okonomi/org/999999999/supplier") {
+                contentType = MediaType.APPLICATION_JSON
+                content = objectMapper.writeValueAsString(validRequest(fnr = "12345678901", orgId = "123456789"))
+            }.andExpect {
+                status { isBadRequest() }
+                jsonPath("$.error_code") { value(ApiErrorCode.MULTIPLE_IDENTIFIERS.id) }
+            }
+    }
+
+    @Test
+    fun `returns validation error on invalid orgId`() {
+        mockMvc
+            .post("/api/v1/egrunnerverv/okonomi/org/999999999/supplier") {
+                contentType = MediaType.APPLICATION_JSON
+                content = objectMapper.writeValueAsString(validRequest(orgId = "abc"))
+            }.andExpect {
+                status { isBadRequest() }
+                jsonPath("$.error_code") { value(ApiErrorCode.GENERIC_BAD_REQUEST.id) }
+            }
+    }
+
+    @Test
+    fun `returns invalid tenant error when orgNo in path is unknown`() {
+        val response =
             mockMvc
-                .post("/api/v1/egrunnerverv/okonomi/supplier") {
+                .post("/api/v1/egrunnerverv/okonomi/org/987654321/supplier") {
                     contentType = MediaType.APPLICATION_JSON
-                    header("X-Tenant", "novari-no")
                     content = objectMapper.writeValueAsString(validRequest())
                 }.andExpect {
-                    status { isOk() }
-                }
-        }
-
-        @Test
-        fun `returns bad request when both identifiers missing`() {
-            mockMvc
-                .post("/api/v1/egrunnerverv/okonomi/supplier") {
-                    contentType = MediaType.APPLICATION_JSON
-                    header("X-Tenant", "novari-no")
-                    content = objectMapper.writeValueAsString(validRequest(fnr = "", orgId = ""))
-                }.andExpect {
                     status { isBadRequest() }
-                    jsonPath("$.error_code") { value(ApiErrorCode.MISSING_FODSELSNUMMER_OR_ORGID.id) }
-                }
-        }
+                    jsonPath("$.error_code") { value(ApiErrorCode.INVALID_ORGANIZATION_NUMBER.id) }
+                }.andReturn()
+                .response
+                .contentAsString
 
-        @Test
-        fun `returns bad request when both identifiers provided`() {
-            mockMvc
-                .post("/api/v1/egrunnerverv/okonomi/supplier") {
-                    contentType = MediaType.APPLICATION_JSON
-                    header("X-Tenant", "novari-no")
-                    content = objectMapper.writeValueAsString(validRequest(fnr = "12345678901", orgId = "123456789"))
-                }.andExpect {
-                    status { isBadRequest() }
-                    jsonPath("$.error_code") { value(ApiErrorCode.MULTIPLE_IDENTIFIERS.id) }
-                }
-        }
-
-        @Test
-        fun `returns validation error on invalid orgId`() {
-            mockMvc
-                .post("/api/v1/egrunnerverv/okonomi/supplier") {
-                    contentType = MediaType.APPLICATION_JSON
-                    header("X-Tenant", "novari-no")
-                    content = objectMapper.writeValueAsString(validRequest(orgId = "abc"))
-                }.andExpect {
-                    status { isBadRequest() }
-                    jsonPath("$.error_code") { value(ApiErrorCode.GENERIC_BAD_REQUEST.id) }
-                }
-        }
-
-        @Test
-        fun `returns invalid tenant error when tenant header is unknown`() {
-            val response =
-                mockMvc
-                    .post("/api/v1/egrunnerverv/okonomi/supplier") {
-                        contentType = MediaType.APPLICATION_JSON
-                        header("X-Tenant", "unknown")
-                        content = objectMapper.writeValueAsString(validRequest())
-                    }.andExpect {
-                        status { isBadRequest() }
-                        jsonPath("$.error_code") { value(ApiErrorCode.INVALID_TENANT_IDENTIFIER.id) }
-                    }.andReturn()
-                    .response
-                    .contentAsString
-
-            val error = objectMapper.readValue(response, ErrorResponse::class.java)
-            assertContains(error.errorMessage, "Ukjent tenant-verdi 'unknown'. Kontroller X-Tenant-headeren.")
-        }
+        val error = objectMapper.readValue(response, ErrorResponse::class.java)
+        assertContains(error.errorMessage, "Ukjent orgNo '987654321'. Kontroller {orgNo} i path.")
     }
+
+    @Test
+    fun `returns bad request when orgNo is not numeric`() {
+        mockMvc
+            .post("/api/v1/egrunnerverv/okonomi/org/abc/supplier") {
+                contentType = MediaType.APPLICATION_JSON
+                content = objectMapper.writeValueAsString(validRequest())
+            }.andExpect {
+                status { isBadRequest() }
+                jsonPath("$.error_code") { value(ApiErrorCode.GENERIC_BAD_REQUEST.id) }
+            }
+    }
+}

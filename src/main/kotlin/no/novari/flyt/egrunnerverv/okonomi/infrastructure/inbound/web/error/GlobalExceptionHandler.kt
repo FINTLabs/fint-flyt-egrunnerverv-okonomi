@@ -58,13 +58,13 @@ class GlobalExceptionHandler {
             )
     }
 
-    @ExceptionHandler(InvalidTenantException::class)
-    fun handleInvalidTenant(ex: InvalidTenantException): ResponseEntity<ErrorResponse> {
+    @ExceptionHandler(InvalidOrganizationNumberException::class)
+    fun handleInvalidOrganizationNumber(ex: InvalidOrganizationNumberException): ResponseEntity<ErrorResponse> {
         return ResponseEntity
             .status(HttpStatus.BAD_REQUEST)
             .body(
                 ErrorResponse(
-                    errorCode = ApiErrorCode.INVALID_TENANT_IDENTIFIER.id,
+                    errorCode = ApiErrorCode.INVALID_ORGANIZATION_NUMBER.id,
                     errorMessage = requireNotNull(ex.message),
                 ),
             )
@@ -78,7 +78,7 @@ class GlobalExceptionHandler {
                 ErrorResponse(
                     errorCode =
                         when (ex.rootCause) {
-                            is InvalidTenantException -> ApiErrorCode.INVALID_TENANT_IDENTIFIER.id
+                            is InvalidOrganizationNumberException -> ApiErrorCode.INVALID_ORGANIZATION_NUMBER.id
                             else -> ApiErrorCode.GENERIC_BAD_REQUEST.id
                         },
                     errorMessage = ex.rootCause?.message ?: ex.cause?.message ?: ex.message,

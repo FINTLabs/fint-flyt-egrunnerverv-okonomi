@@ -24,7 +24,7 @@ class DefaultTenantGatewayResolverTest {
         val gateway = StubGateway()
         val resolver =
             DefaultTenantGatewayResolver(
-                props = AdapterSupplierProperties(byTenant = mapOf("novari-no" to "visma")),
+                props = AdapterSupplierProperties(byOrgNo = emptyMap(), byTenant = mapOf("novari-no" to "visma")),
                 gateways = mapOf("visma" to gateway),
             )
 
@@ -37,7 +37,7 @@ class DefaultTenantGatewayResolverTest {
     fun `resolve fails when mapping missing`() {
         val resolver =
             DefaultTenantGatewayResolver(
-                props = AdapterSupplierProperties(byTenant = emptyMap()),
+                props = AdapterSupplierProperties(byOrgNo = emptyMap(), byTenant = emptyMap()),
                 gateways = emptyMap(),
             )
 
@@ -52,7 +52,7 @@ class DefaultTenantGatewayResolverTest {
     fun `resolve fails when bean name not found`() {
         val resolver =
             DefaultTenantGatewayResolver(
-                props = AdapterSupplierProperties(byTenant = mapOf("novari-no" to "visma")),
+                props = AdapterSupplierProperties(byOrgNo = emptyMap(), byTenant = mapOf("novari-no" to "visma")),
                 gateways = emptyMap(),
             )
 
