@@ -28,11 +28,11 @@ class AdapterConfigurationValidator(
             "Mangler selskapsmapping mot Visma for tenant(s): $missingCompany."
         }
         require(unusedCompany.isEmpty()) {
-            "Selskapsmapping mot Visma er definert for tenants som ikke er koblet til Visma-adapteret: $unusedCompany."
+            "Selskapsmapping mot Visma er definert for tenanter som ikke er koblet til Visma-adapteret: $unusedCompany."
         }
 
         if (vismaTenants.isEmpty()) {
-            logger.warn { "Ingen tenants er konfigurert til å bruke Visma-adapteret" }
+            logger.warn { "Ingen tenanter er konfigurert til å bruke Visma-adapteret" }
         }
     }
 

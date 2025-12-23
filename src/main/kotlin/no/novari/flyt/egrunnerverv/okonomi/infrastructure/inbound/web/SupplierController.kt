@@ -22,18 +22,20 @@ class SupplierController(
 ) {
     @PostMapping
     fun getOrCreateSupplier(
-        @Valid @RequestBody supplier: SupplierRequest,
+        @Valid @RequestBody supplierRequest: SupplierRequest,
         @PathVariable orgNo: Long,
     ): ResponseEntity<Void> {
         val tenantId = orgNoConverter.convert(orgNo)
-        val syncResult =
+        val syncContext = SupplierRequestMapper.toSyncContext(supplierRequest)
+        val syncOutcome =
             syncSupplierUseCase.getOrCreate(
-                supplier = SupplierRequestMapper.toDomainSupplier(supplier),
-                supplierIdentity = SupplierIdentity.from(supplier.fodselsNummer, supplier.orgId),
+                supplier = SupplierRequestMapper.toDomainSupplier(payload = supplierRequest),
+                syncContext = syncContext,
+                supplierIdentity = SupplierIdentity.from(supplierRequest.fodselsNummer, supplierRequest.orgId),
                 tenantId = tenantId,
             )
 
-        return when (syncResult) {
+        return when (syncOutcome.result) {
             SupplierSyncResult.Created -> ResponseEntity.ok().build()
             SupplierSyncResult.Updated -> ResponseEntity.ok().build()
         }

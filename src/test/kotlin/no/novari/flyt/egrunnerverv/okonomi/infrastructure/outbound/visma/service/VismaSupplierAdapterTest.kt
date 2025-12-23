@@ -7,6 +7,7 @@ import no.novari.flyt.egrunnerverv.okonomi.domain.error.CreateSupplierException
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.GenericSupplierException
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.GetSupplierException
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.TenantToCompanyException
+import no.novari.flyt.egrunnerverv.okonomi.domain.model.ExternalSupplierId
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.Supplier
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.SupplierIdentity
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.TenantId
@@ -25,6 +26,7 @@ class VismaSupplierAdapterTest {
     private val gateway = VismaSupplierAdapter(client)
     private val supplier =
         Supplier(
+            externalId = ExternalSupplierId("1234"),
             name = "Leverandør AS",
             kontoNummer = "1234.56.78901",
             street = "Gate 1",
@@ -37,7 +39,12 @@ class VismaSupplierAdapterTest {
 
     @Test
     fun `creates supplier when not found`() {
-        every { client.getCustomerSupplierByIdentifier(identity, tenantId) } returns null
+        every {
+            client.getCustomerSupplierByIdentifier(
+                supplierIdentity = identity,
+                tenantId = tenantId,
+            )
+        } returns null andThen supplier
         every {
             client.createCustomerSupplier(
                 supplier = supplier,
@@ -48,7 +55,8 @@ class VismaSupplierAdapterTest {
 
         val result = gateway.getOrCreate(supplier = supplier, supplierIdentity = identity, tenantId = tenantId)
 
-        assertEquals(SupplierSyncResult.Created, result)
+        assertEquals(SupplierSyncResult.Created, result.result)
+        assertEquals(supplier, result.supplier)
         verify(exactly = 1) {
             client.createCustomerSupplier(
                 supplier = supplier,
@@ -60,17 +68,28 @@ class VismaSupplierAdapterTest {
 
     @Test
     fun `updates supplier when already exists`() {
-        every { client.getCustomerSupplierByIdentifier(identity, tenantId) } returns supplier
+        every {
+            client.getCustomerSupplierByIdentifier(
+                supplierIdentity = identity,
+                tenantId = tenantId,
+            )
+        } returns supplier
 
         val result = gateway.getOrCreate(supplier = supplier, supplierIdentity = identity, tenantId = tenantId)
 
-        assertEquals(SupplierSyncResult.Updated, result)
+        assertEquals(SupplierSyncResult.Updated, result.result)
+        assertEquals(supplier, result.supplier)
         verify(exactly = 0) { client.createCustomerSupplier(any(), any(), any()) }
     }
 
     @Test
     fun `translates Visma create exception`() {
-        every { client.getCustomerSupplierByIdentifier(identity, tenantId) } returns null
+        every {
+            client.getCustomerSupplierByIdentifier(
+                supplierIdentity = identity,
+                tenantId = tenantId,
+            )
+        } returns null
         every {
             client.createCustomerSupplier(
                 supplier = supplier,
@@ -86,28 +105,48 @@ class VismaSupplierAdapterTest {
 
     @Test
     fun `translates Visma get exception`() {
-        every { client.getCustomerSupplierByIdentifier(identity, tenantId) } throws VismaGetSupplierException(tenantId)
+        every {
+            client.getCustomerSupplierByIdentifier(
+                supplierIdentity = identity,
+                tenantId = tenantId,
+            )
+        } throws VismaGetSupplierException(tenantId)
 
         assertFailsWith<GetSupplierException> {
-            gateway.getOrCreate(supplier, identity, tenantId)
+            gateway.getOrCreate(
+                supplier = supplier,
+                supplierIdentity = identity,
+                tenantId = tenantId,
+            )
         }
     }
 
     @Test
     fun `translates tenant to company exception`() {
-        every { client.getCustomerSupplierByIdentifier(identity, tenantId) } throws
-            VismaTenantToCompanyException(
-                tenantId,
+        every {
+            client.getCustomerSupplierByIdentifier(
+                supplierIdentity = identity,
+                tenantId = tenantId,
             )
+        } throws VismaTenantToCompanyException(tenantId)
 
         assertFailsWith<TenantToCompanyException> {
-            gateway.getOrCreate(supplier, identity, tenantId)
+            gateway.getOrCreate(
+                supplier = supplier,
+                supplierIdentity = identity,
+                tenantId = tenantId,
+            )
         }
     }
 
     @Test
     fun `wraps unexpected exception`() {
-        every { client.getCustomerSupplierByIdentifier(identity, tenantId) } throws RestClientException("boom")
+        every {
+            client.getCustomerSupplierByIdentifier(
+                supplierIdentity = identity,
+                tenantId = tenantId,
+            )
+        } throws RestClientException("boom")
 
         assertFailsWith<GenericSupplierException> {
             gateway.getOrCreate(supplier = supplier, supplierIdentity = identity, tenantId = tenantId)

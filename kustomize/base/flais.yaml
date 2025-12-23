@@ -41,8 +41,6 @@ spec:
                 secretKeyRef:
                     name: novari-flyt-egrunnerverv-dispatch-oauth2-client
                     key: novari.flyt.egrunnerverv.dispatch.password
-        -   name: ADAPTER_ADAPTERS_SERVICENOW_BASE_URL
-            value: https://vigoiks.service-now.com/api/now/table
         -   name: SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_SERVICENOW_CLIENT_ID
             valueFrom:
                 secretKeyRef:
@@ -57,12 +55,6 @@ spec:
             value: password
         -   name: SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_SERVICENOW_TOKEN_URI
             value: https://vigoiks.service-now.com/oauth_token.do
-
-        # Visma
-        -   name: ADAPTER_ADAPTERS_VISMA_REGISTRATION_ID
-            value: visma
-        -   name: ADAPTER_ADAPTERS_VISMA_BASE_URL
-            value: https://integrationtest.enterprise-stag.visma.no
 
     observability:
         metrics:

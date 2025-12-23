@@ -6,6 +6,7 @@ import no.novari.flyt.egrunnerverv.okonomi.domain.error.GetSupplierException
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.IdentifierTooLongException
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.MissingIdentifierException
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.MultipleIdentifiersException
+import no.novari.flyt.egrunnerverv.okonomi.domain.error.ServiceNowSyncException
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.TenantToCompanyException
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.inbound.web.dto.ErrorResponse
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.tenant.MissingGatewayBeanException
@@ -28,21 +29,33 @@ class GlobalExceptionHandlerTest {
     fun `handleDomainValidationException maps missing identifier`() {
         val response = handler.handleDomainValidationException(MissingIdentifierException())
 
-        assertError(response, HttpStatus.BAD_REQUEST, ApiErrorCode.MISSING_FODSELSNUMMER_OR_ORGID)
+        assertError(
+            response = response,
+            status = HttpStatus.BAD_REQUEST,
+            code = ApiErrorCode.MISSING_FODSELSNUMMER_OR_ORGID,
+        )
     }
 
     @Test
     fun `handleDomainValidationException maps multiple identifiers`() {
         val response = handler.handleDomainValidationException(MultipleIdentifiersException())
 
-        assertError(response, HttpStatus.BAD_REQUEST, ApiErrorCode.MULTIPLE_IDENTIFIERS)
+        assertError(
+            response = response,
+            status = HttpStatus.BAD_REQUEST,
+            code = ApiErrorCode.MULTIPLE_IDENTIFIERS,
+        )
     }
 
     @Test
     fun `handleDomainValidationException maps identifier too long`() {
         val response = handler.handleDomainValidationException(IdentifierTooLongException())
 
-        assertError(response, HttpStatus.BAD_REQUEST, ApiErrorCode.IDENTIFIER_TOO_LONG)
+        assertError(
+            response = response,
+            status = HttpStatus.BAD_REQUEST,
+            code = ApiErrorCode.IDENTIFIER_TOO_LONG,
+        )
     }
 
     @Test
@@ -54,7 +67,11 @@ class GlobalExceptionHandlerTest {
 
         val response = handler.handleValidation(exception)
 
-        assertError(response, HttpStatus.BAD_REQUEST, ApiErrorCode.GENERIC_BAD_REQUEST)
+        assertError(
+            response = response,
+            status = HttpStatus.BAD_REQUEST,
+            code = ApiErrorCode.GENERIC_BAD_REQUEST,
+        )
         assertEquals("first error; second error", response.body?.errorMessage)
     }
 
@@ -62,7 +79,11 @@ class GlobalExceptionHandlerTest {
     fun `handleInvalidOrganizationNumber returns bad request with org number code`() {
         val response = handler.handleInvalidOrganizationNumber(InvalidOrganizationNumberException(123L))
 
-        assertError(response, HttpStatus.BAD_REQUEST, ApiErrorCode.INVALID_ORGANIZATION_NUMBER)
+        assertError(
+            response = response,
+            status = HttpStatus.BAD_REQUEST,
+            code = ApiErrorCode.INVALID_ORGANIZATION_NUMBER,
+        )
     }
 
     @Test
@@ -78,7 +99,11 @@ class GlobalExceptionHandlerTest {
 
         val response = handler.handleMethodArgumentTypeMismatch(exception)
 
-        assertError(response, HttpStatus.BAD_REQUEST, ApiErrorCode.INVALID_ORGANIZATION_NUMBER)
+        assertError(
+            response = response,
+            status = HttpStatus.BAD_REQUEST,
+            code = ApiErrorCode.INVALID_ORGANIZATION_NUMBER,
+        )
     }
 
     @Test
@@ -94,56 +119,99 @@ class GlobalExceptionHandlerTest {
 
         val response = handler.handleMethodArgumentTypeMismatch(exception)
 
-        assertError(response, HttpStatus.BAD_REQUEST, ApiErrorCode.GENERIC_BAD_REQUEST)
+        assertError(
+            response = response,
+            status = HttpStatus.BAD_REQUEST,
+            code = ApiErrorCode.GENERIC_BAD_REQUEST,
+        )
     }
 
     @Test
     fun `handleNoAdapterMapping returns 500 with missing adapter mapping code`() {
         val response = handler.handleNoAdapterMapping(NoAdapterMappingException("novari-no"))
 
-        assertError(response, HttpStatus.INTERNAL_SERVER_ERROR, ApiErrorCode.MISSING_ADAPTER_MAPPING)
+        assertError(
+            response = response,
+            status = HttpStatus.INTERNAL_SERVER_ERROR,
+            code = ApiErrorCode.MISSING_ADAPTER_MAPPING,
+        )
     }
 
     @Test
     fun `handleMissingGatewayBean returns 500 with missing gateway bean code`() {
         val response = handler.handleMissingGatewayBean(MissingGatewayBeanException("visma"))
 
-        assertError(response, HttpStatus.INTERNAL_SERVER_ERROR, ApiErrorCode.MISSING_GATEWAY_BEAN)
+        assertError(
+            response = response,
+            status = HttpStatus.INTERNAL_SERVER_ERROR,
+            code = ApiErrorCode.MISSING_GATEWAY_BEAN,
+        )
     }
 
     @Test
     fun `handleSupplierSyncException maps create supplier`() {
         val response = handler.handleSupplierSyncException(CreateSupplierException())
 
-        assertError(response, HttpStatus.INTERNAL_SERVER_ERROR, ApiErrorCode.CREATE_SUPPLIER_ERROR)
+        assertError(
+            response = response,
+            status = HttpStatus.INTERNAL_SERVER_ERROR,
+            code = ApiErrorCode.CREATE_SUPPLIER_ERROR,
+        )
     }
 
     @Test
     fun `handleSupplierSyncException maps generic supplier`() {
         val response = handler.handleSupplierSyncException(GenericSupplierException("boom"))
 
-        assertError(response, HttpStatus.INTERNAL_SERVER_ERROR, ApiErrorCode.GENERIC_SUPPLIER_ERROR)
+        assertError(
+            response = response,
+            status = HttpStatus.INTERNAL_SERVER_ERROR,
+            code = ApiErrorCode.GENERIC_SUPPLIER_ERROR,
+        )
     }
 
     @Test
     fun `handleSupplierSyncException maps get supplier`() {
         val response = handler.handleSupplierSyncException(GetSupplierException())
 
-        assertError(response, HttpStatus.INTERNAL_SERVER_ERROR, ApiErrorCode.GET_SUPPLIER_ERROR)
+        assertError(
+            response = response,
+            status = HttpStatus.INTERNAL_SERVER_ERROR,
+            code = ApiErrorCode.GET_SUPPLIER_ERROR,
+        )
     }
 
     @Test
     fun `handleSupplierSyncException maps tenant to company`() {
         val response = handler.handleSupplierSyncException(TenantToCompanyException())
 
-        assertError(response, HttpStatus.INTERNAL_SERVER_ERROR, ApiErrorCode.TENANT_TO_COMPANY_ERROR)
+        assertError(
+            response = response,
+            status = HttpStatus.INTERNAL_SERVER_ERROR,
+            code = ApiErrorCode.TENANT_TO_COMPANY_ERROR,
+        )
+    }
+
+    @Test
+    fun `handleSupplierSyncException maps ServiceNow sync`() {
+        val response = handler.handleSupplierSyncException(ServiceNowSyncException("boom"))
+
+        assertError(
+            response = response,
+            status = HttpStatus.INTERNAL_SERVER_ERROR,
+            code = ApiErrorCode.SERVICE_NOW_SYNC_ERROR,
+        )
     }
 
     @Test
     fun `handleGeneric returns unknown error`() {
         val response = handler.handleGeneric(Exception("boom"))
 
-        assertError(response, HttpStatus.INTERNAL_SERVER_ERROR, ApiErrorCode.UNKNOWN_ERROR)
+        assertError(
+            response = response,
+            status = HttpStatus.INTERNAL_SERVER_ERROR,
+            code = ApiErrorCode.UNKNOWN_ERROR,
+        )
         assertEquals(response.body?.errorMessage?.contains("En uventet feil oppsto"), true)
     }
 

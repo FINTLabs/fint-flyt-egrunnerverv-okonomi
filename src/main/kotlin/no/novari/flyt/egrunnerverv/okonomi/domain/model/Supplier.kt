@@ -4,6 +4,7 @@ import no.novari.flyt.egrunnerverv.okonomi.domain.logging.LogMasked
 import no.novari.flyt.egrunnerverv.okonomi.domain.logging.MaskType
 
 data class Supplier(
+    val externalId: ExternalSupplierId?,
     @LogMasked(type = MaskType.KEEP_FIRST, first = 4)
     val name: String,
     @LogMasked(type = MaskType.KEEP_LAST, last = 4)

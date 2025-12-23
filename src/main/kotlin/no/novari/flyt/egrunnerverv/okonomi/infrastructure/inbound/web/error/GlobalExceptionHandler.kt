@@ -1,6 +1,7 @@
 package no.novari.flyt.egrunnerverv.okonomi.infrastructure.inbound.web.error
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import net.logstash.logback.argument.StructuredArguments.kv
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.CreateSupplierException
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.DomainValidationException
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.GenericSupplierException
@@ -8,6 +9,7 @@ import no.novari.flyt.egrunnerverv.okonomi.domain.error.GetSupplierException
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.IdentifierTooLongException
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.MissingIdentifierException
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.MultipleIdentifiersException
+import no.novari.flyt.egrunnerverv.okonomi.domain.error.ServiceNowSyncException
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.SupplierSyncException
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.TenantToCompanyException
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.inbound.web.dto.ErrorResponse
@@ -119,6 +121,7 @@ class GlobalExceptionHandler {
                 is GenericSupplierException -> ApiErrorCode.GENERIC_SUPPLIER_ERROR
                 is GetSupplierException -> ApiErrorCode.GET_SUPPLIER_ERROR
                 is TenantToCompanyException -> ApiErrorCode.TENANT_TO_COMPANY_ERROR
+                is ServiceNowSyncException -> ApiErrorCode.SERVICE_NOW_SYNC_ERROR
             }
         return ResponseEntity
             .status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -132,8 +135,12 @@ class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception::class)
     fun handleGeneric(ex: Exception): ResponseEntity<ErrorResponse> {
-        logger.error(ex) {
-            "Ukjent feil under håndtering av forespørsel"
+        logger.atError {
+            message = "Ukjent feil under håndtering av forespørsel"
+            arguments =
+                arrayOf(
+                    kv("cause", ex.cause),
+                )
         }
         return ResponseEntity
             .status(HttpStatus.INTERNAL_SERVER_ERROR)

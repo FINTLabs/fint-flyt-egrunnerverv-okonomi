@@ -12,6 +12,24 @@ labels:
 
 patches:
     -   patch: |-
+            -   op: add
+                path: "/spec/env/-"
+                value:
+                    name: ADAPTER_ADAPTERS_SERVICENOW_BASE_URL
+                    value: https://vigoikstest.service-now.com/api/now/table
+
+            -   op: add
+                path: "/spec/env/-"
+                value:
+                    name: ADAPTER_ADAPTERS_VISMA_REGISTRATION_ID
+                    value: visma
+            -   op: add
+                path: "/spec/env/-"
+                value:
+                    name: ADAPTER_ADAPTERS_VISMA_BASE_URL
+                    value: https://integrationtest.enterprise-stag.visma.no
+
+    -   patch: |-
             -   op: replace
                 path: "/spec/itemPath"
                 value: "vaults/aks-beta-vault/items/fint-flyt-egrunnerverv-gateway-out"

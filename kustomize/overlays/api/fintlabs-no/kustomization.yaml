@@ -27,6 +27,11 @@ patches:
             -   op: replace
                 path: "/spec/observability/metrics/path"
                 value: "/fintlabs-no/actuator/prometheus"
+            -   op: add
+                path: "/spec/env/-"
+                value:
+                    name: ADAPTER_ADAPTERS_SERVICENOW_BASE_URL
+                    value: https://vigoiks.service-now.com/api/now/table
 
         target:
             kind: Application

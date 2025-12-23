@@ -9,7 +9,7 @@ sealed interface SupplierIdentity {
     val value: String
 
     data class Fodselsnummer(
-        @LogMasked(type = MaskType.FULL)
+        @LogMasked(type = MaskType.KEEP_FIRST, first = 4)
         override val value: String,
     ) : SupplierIdentity
 

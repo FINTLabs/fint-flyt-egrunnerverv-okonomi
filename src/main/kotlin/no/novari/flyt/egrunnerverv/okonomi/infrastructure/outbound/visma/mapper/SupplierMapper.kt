@@ -1,5 +1,6 @@
 package no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.mapper
 
+import no.novari.flyt.egrunnerverv.okonomi.domain.model.ExternalSupplierId
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.Supplier
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.SupplierIdentity
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.model.CustomerSupplier
@@ -41,6 +42,7 @@ class SupplierMapper {
 
     fun mapToSupplier(customerSupplier: CustomerSupplier): Supplier {
         return Supplier(
+            externalId = customerSupplier.csId?.takeIf { it.isNotBlank() }?.let { ExternalSupplierId(it) },
             name = customerSupplier.csName ?: "",
             kontoNummer = customerSupplier.bankAccount ?: "",
             street = customerSupplier.csAddress?.joinToString(", ") ?: "",
@@ -66,7 +68,7 @@ class SupplierMapper {
         val customerSupplier =
             CustomerSupplier(
                 csType = type.id,
-                csId = null,
+                csId = supplier.externalId?.value,
                 csName = supplier.name,
                 csAddress =
                     supplier.street

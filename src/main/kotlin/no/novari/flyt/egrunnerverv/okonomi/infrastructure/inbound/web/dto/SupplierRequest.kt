@@ -6,6 +6,8 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Pattern
 
 data class SupplierRequest(
+    @field:NotBlank
+    val sysId: String,
     @field:Pattern(regexp = "^$|^[0-9]{11}$", message = "fodselsnummer må stå tomt eller inneholde nøyaktig 11 sifre")
     @get:JsonProperty("u_fdselsnummer")
     val fodselsNummer: String? = null,

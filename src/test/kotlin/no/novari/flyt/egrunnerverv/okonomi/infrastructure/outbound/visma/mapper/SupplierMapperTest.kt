@@ -1,5 +1,6 @@
 package no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.mapper
 
+import no.novari.flyt.egrunnerverv.okonomi.domain.model.ExternalSupplierId
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.Supplier
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.SupplierIdentity
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.model.CustomerSupplier
@@ -48,8 +49,8 @@ class SupplierMapperTest {
                             division = "0",
                             customerSupplier =
                                 listOf(
-                                    CustomerSupplier(csType = "L"),
-                                    CustomerSupplier(csType = "L"),
+                                    CustomerSupplier(csType = "L", "1234"),
+                                    CustomerSupplier(csType = "L", "5678"),
                                 ),
                         ),
                     ),
@@ -71,6 +72,7 @@ class SupplierMapperTest {
                                 listOf(
                                     CustomerSupplier(
                                         csType = "L",
+                                        csId = "1234",
                                         csName = "Test Leverandør",
                                         csAddress = listOf("Inngang 1", "Gate 2"),
                                         csPostalAddress = PostalAddress(zipCode = "0010", city = "Oslo"),
@@ -117,6 +119,7 @@ class SupplierMapperTest {
     fun `mapToVismaRequest maps fields and splits street`() {
         val supplier =
             Supplier(
+                externalId = ExternalSupplierId("1234"),
                 name = "Leverandør AS",
                 kontoNummer = "1234.56.78901",
                 street = "Oppgang 1, Gate 2",

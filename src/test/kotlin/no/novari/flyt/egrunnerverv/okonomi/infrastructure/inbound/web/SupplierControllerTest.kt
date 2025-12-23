@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import no.novari.flyt.egrunnerverv.okonomi.application.supplier.SyncSupplierUseCase
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.Supplier
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.SupplierIdentity
+import no.novari.flyt.egrunnerverv.okonomi.domain.model.SupplierSyncContext
+import no.novari.flyt.egrunnerverv.okonomi.domain.model.SupplierSyncOutcome
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.TenantId
 import no.novari.flyt.egrunnerverv.okonomi.domain.ports.out.SupplierSyncResult
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.inbound.web.config.OrgNoConverter
@@ -55,10 +57,11 @@ class SupplierControllerTest
                 return object : SyncSupplierUseCase {
                     override fun getOrCreate(
                         supplier: Supplier,
+                        syncContext: SupplierSyncContext,
                         supplierIdentity: SupplierIdentity,
                         tenantId: TenantId,
-                    ): SupplierSyncResult {
-                        return SupplierSyncResult.Created
+                    ): SupplierSyncOutcome {
+                        return SupplierSyncOutcome(SupplierSyncResult.Created, supplier)
                     }
                 }
             }
@@ -69,6 +72,7 @@ class SupplierControllerTest
             orgId: String? = "123456789",
         ): SupplierRequest =
             SupplierRequest(
+                sysId = "123-456-789",
                 fodselsNummer = fnr,
                 orgId = orgId,
                 name = "Leverandør AS",
@@ -141,7 +145,7 @@ class SupplierControllerTest
                     .contentAsString
 
             val error = objectMapper.readValue(response, ErrorResponse::class.java)
-            assertContains(error.errorMessage, "Ukjent orgNo '987654321'. Kontroller {orgNo} i path.")
+            assertContains(error.errorMessage, "Ukjent organisasjonsnummer '987654321'. Kontroller {orgNo} i URL.")
         }
 
         @Test

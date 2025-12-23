@@ -21,3 +21,8 @@ class CreateSupplierException(
 class TenantToCompanyException(
     cause: Throwable? = null,
 ) : SupplierSyncException("Klarte ikke å finne firma for tenant", cause)
+
+class ServiceNowSyncException(
+    message: String,
+    cause: Throwable? = null,
+) : SupplierSyncException(message, cause)

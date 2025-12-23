@@ -2,6 +2,7 @@ package no.novari.flyt.egrunnerverv.okonomi.infrastructure.tenant
 
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.Supplier
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.SupplierIdentity
+import no.novari.flyt.egrunnerverv.okonomi.domain.model.SupplierSyncOutcome
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.TenantId
 import no.novari.flyt.egrunnerverv.okonomi.domain.ports.out.SupplierGatewayPort
 import no.novari.flyt.egrunnerverv.okonomi.domain.ports.out.SupplierSyncResult
@@ -16,7 +17,7 @@ class DefaultTenantGatewayResolverTest {
             supplier: Supplier,
             supplierIdentity: SupplierIdentity,
             tenantId: TenantId,
-        ): SupplierSyncResult = SupplierSyncResult.Created
+        ): SupplierSyncOutcome = SupplierSyncOutcome(SupplierSyncResult.Created, supplier)
     }
 
     @Test

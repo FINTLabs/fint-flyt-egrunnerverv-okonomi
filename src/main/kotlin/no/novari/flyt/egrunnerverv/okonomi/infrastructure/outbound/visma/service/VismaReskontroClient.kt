@@ -50,17 +50,34 @@ class VismaReskontroClient(
         val company = getCompanyFromTenant(tenantId)
 
         val xmlResponse =
-            restClient
-                .get()
-                .uri { uriBuilder ->
-                    uriBuilder
-                        .path("/erp_ws/oauth/reskontro/$company/0")
-                        .queryParam("fnr", supplierIdentity.value)
-                        .build()
-                }.accept(MediaType.TEXT_XML)
-                .retrieve()
-                .body<VUXml>()
-                ?: throw VismaGetSupplierException(tenantId)
+            try {
+                restClient
+                    .get()
+                    .uri { uriBuilder ->
+                        uriBuilder
+                            .path("/erp_ws/oauth/reskontro/$company/0")
+                            .queryParam("fnr", supplierIdentity.value)
+                            .build()
+                    }.accept(MediaType.TEXT_XML)
+                    .retrieve()
+                    .body<VUXml>()
+                    ?: throw VismaGetSupplierException(tenantId)
+            } catch (e: Exception) {
+                logger.atError {
+                    message = "Klarte ikke å hente supplier fra Visma"
+                    arguments =
+                        arrayOf(
+                            kv("supplierIdentity", supplierIdentity.toMaskedLogMap()),
+                            kv("tenantId", tenantId),
+                            kv("cause", e),
+                        )
+                }
+                if (e is VismaGetSupplierException) {
+                    throw e
+                }
+
+                throw VismaGetSupplierException(tenantId)
+            }
 
         return supplierMapper.mapSingleSupplier(xmlResponse)
     }
@@ -93,15 +110,32 @@ class VismaReskontroClient(
             )
 
         val response =
-            restClient
-                .post()
-                .uri("/erp_ws/oauth/reskontro")
-                .contentType(MediaType.APPLICATION_XML)
-                .accept(MediaType.TEXT_XML)
-                .body(requestBody)
-                .retrieve()
-                .body<VUXmlStoreResponse>()
-                ?: throw VismaCreateSupplierException(tenantId)
+            try {
+                restClient
+                    .post()
+                    .uri("/erp_ws/oauth/reskontro")
+                    .contentType(MediaType.APPLICATION_XML)
+                    .accept(MediaType.TEXT_XML)
+                    .body(requestBody)
+                    .retrieve()
+                    .body<VUXmlStoreResponse>()
+                    ?: throw VismaCreateSupplierException(tenantId)
+            } catch (e: Exception) {
+                logger.atError {
+                    message = "klarte ikke å opprette leverandør i Visma"
+                    arguments =
+                        arrayOf(
+                            kv("supplier", supplier.toMaskedLogMap()),
+                            kv("supplierIdentity", supplierIdentity.toMaskedLogMap()),
+                            kv("tenant", tenantId.id),
+                            kv("cause", e),
+                        )
+                }
+                if (e is VismaCreateSupplierException) {
+                    throw e
+                }
+                throw VismaCreateSupplierException(tenantId)
+            }
 
         val result = response.customerSuppliers
 
@@ -167,7 +201,7 @@ class VismaReskontroClient(
         return props.company.byTenant[tenantId.id]
             ?: run {
                 logger.atWarn {
-                    message = "Fant ingen selskapsmapping for tenant"
+                    message = "Fant ingen selskaps-mapping for tenant"
                     arguments = arrayOf(kv("tenant", tenantId))
                 }
                 throw VismaTenantToCompanyException(tenantId)

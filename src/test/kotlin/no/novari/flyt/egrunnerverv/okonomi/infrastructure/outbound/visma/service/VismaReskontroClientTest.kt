@@ -2,6 +2,7 @@ package no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.servic
 
 import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import no.novari.flyt.egrunnerverv.okonomi.domain.model.ExternalSupplierId
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.Supplier
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.SupplierIdentity
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.TenantId
@@ -66,7 +67,7 @@ class VismaReskontroClientTest {
             """
             <VUXML>
               <customerSuppliers company="123" division="0">
-                <customerSupplier csType="L">
+                <customerSupplier csType="L" csId="visma-1234">
                   <csName>Test Leverandør</csName>
                   <csAddress>Gate 1</csAddress>
                   <csPostalAddress>
@@ -89,12 +90,13 @@ class VismaReskontroClientTest {
 
         val supplier =
             client.getCustomerSupplierByIdentifier(
-                SupplierIdentity.Fodselsnummer("12345678901"),
-                TenantId("novari-no"),
+                supplierIdentity = SupplierIdentity.Fodselsnummer("12345678901"),
+                tenantId = TenantId("novari-no"),
             )
 
         assertNotNull(supplier)
         assertEquals("Test Leverandør", supplier.name)
+        assertEquals("visma-1234", supplier.externalId?.value)
         assertEquals("1234.56.78901", supplier.kontoNummer)
         assertEquals("Gate 1", supplier.street)
         assertEquals("0010", supplier.zip)
@@ -123,8 +125,8 @@ class VismaReskontroClientTest {
 
         assertFailsWith<VismaIdentifierTooLongException> {
             localClient.getCustomerSupplierByIdentifier(
-                SupplierIdentity.OrgId("123456789012345678"),
-                TenantId("novari-no"),
+                supplierIdentity = SupplierIdentity.OrgId("123456789012345678"),
+                tenantId = TenantId("novari-no"),
             )
         }
     }
@@ -148,8 +150,8 @@ class VismaReskontroClientTest {
 
         assertFailsWith<VismaTenantToCompanyException> {
             localClient.getCustomerSupplierByIdentifier(
-                SupplierIdentity.Fodselsnummer("12345678901"),
-                TenantId("novari-no"),
+                supplierIdentity = SupplierIdentity.Fodselsnummer("12345678901"),
+                tenantId = TenantId("novari-no"),
             )
         }
     }
@@ -176,6 +178,7 @@ class VismaReskontroClientTest {
         client.createCustomerSupplier(
             supplier =
                 Supplier(
+                    externalId = ExternalSupplierId("1234"),
                     name = "Leverandør AS",
                     kontoNummer = "1234.56.78901",
                     street = "Gate 1",
@@ -212,6 +215,7 @@ class VismaReskontroClientTest {
         client.createCustomerSupplier(
             supplier =
                 Supplier(
+                    externalId = ExternalSupplierId("1234"),
                     name = "Leverandør AS",
                     kontoNummer = "1234.56.78901",
                     street = "Gate 1",
