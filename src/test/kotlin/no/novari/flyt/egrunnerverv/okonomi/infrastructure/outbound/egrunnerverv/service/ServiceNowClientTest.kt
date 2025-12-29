@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpMethod
 import org.springframework.http.MediaType
+import org.springframework.retry.support.RetryTemplate
 import org.springframework.test.web.client.MockRestServiceServer
 import org.springframework.test.web.client.match.MockRestRequestMatchers.content
 import org.springframework.test.web.client.match.MockRestRequestMatchers.method
@@ -27,7 +28,15 @@ class ServiceNowClientTest {
     fun setup() {
         val restClientBuilder = RestClient.builder().baseUrl("http://localhost")
         server = MockRestServiceServer.bindTo(restClientBuilder).bufferContent().build()
-        client = ServiceNowClient(restClientBuilder.build())
+        client =
+            ServiceNowClient(
+                restClientBuilder.build(),
+                RetryTemplate
+                    .builder()
+                    .maxAttempts(1)
+                    .fixedBackoff(1)
+                    .build(),
+            )
     }
 
     @Test

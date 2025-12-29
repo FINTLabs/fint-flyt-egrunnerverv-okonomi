@@ -2,11 +2,14 @@ package no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.servic
 
 import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import io.mockk.every
+import io.mockk.mockk
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.ExternalSupplierId
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.Supplier
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.SupplierIdentity
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.TenantId
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.config.VismaProperties
+import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.config.VismaRestClientFactory
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.error.VismaIdentifierTooLongException
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.error.VismaTenantToCompanyException
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.mapper.SupplierMapper
@@ -14,6 +17,12 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpMethod
 import org.springframework.http.MediaType
+import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClient
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager
+import org.springframework.security.oauth2.client.registration.ClientRegistration
+import org.springframework.security.oauth2.core.AuthorizationGrantType
+import org.springframework.security.oauth2.core.OAuth2AccessToken
 import org.springframework.test.web.client.MockRestServiceServer
 import org.springframework.test.web.client.match.MockRestRequestMatchers.content
 import org.springframework.test.web.client.match.MockRestRequestMatchers.method
@@ -21,6 +30,7 @@ import org.springframework.test.web.client.match.MockRestRequestMatchers.queryPa
 import org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo
 import org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess
 import org.springframework.web.client.RestClient
+import java.time.Instant
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
@@ -28,13 +38,21 @@ import kotlin.test.assertNotNull
 class VismaReskontroClientTest {
     private lateinit var server: MockRestServiceServer
     private lateinit var client: VismaReskontroClient
+    private lateinit var manager: OAuth2AuthorizedClientManager
+    private lateinit var restClientFactory: VismaRestClientFactory
 
     private val props =
         VismaProperties(
-            registrationId = "visma",
-            baseUrl = "http://localhost",
-            legacyAuth = "legacy",
-            company = VismaProperties.Company(byTenant = mapOf(TenantId("novari-no").id to "123")),
+            tenants =
+                mapOf(
+                    "novari-no" to
+                        VismaProperties.Tenant(
+                            registrationId = "visma",
+                            baseUrl = "http://localhost",
+                            legacyAuth = "legacy",
+                            company = "123",
+                        ),
+                ),
         )
 
     @BeforeEach
@@ -43,7 +61,7 @@ class VismaReskontroClientTest {
         val restClientBuilder =
             RestClient
                 .builder()
-                .baseUrl(props.baseUrl)
+                .baseUrl("http://localhost")
                 .messageConverters { converters ->
                     converters.add(
                         org.springframework.http.converter.xml
@@ -52,10 +70,15 @@ class VismaReskontroClientTest {
                 }
         server = MockRestServiceServer.bindTo(restClientBuilder).bufferContent().build()
         val restClient = restClientBuilder.build()
+        manager = mockk()
+        every { manager.authorize(any<OAuth2AuthorizeRequest>()) } returns authorizedClient()
+        restClientFactory = mockk()
+        every { restClientFactory.create(any(), any()) } returns restClient
 
         client =
             VismaReskontroClient(
-                restClient = restClient,
+                restClientFactory = restClientFactory,
+                manager = manager,
                 props = props,
                 supplierMapper = SupplierMapper(),
             )
@@ -110,15 +133,21 @@ class VismaReskontroClientTest {
     fun `getCustomerSupplierByIdentifier fails when identifier is too long`() {
         val missingProps =
             VismaProperties(
-                registrationId = "visma",
-                baseUrl = "http://localhost",
-                legacyAuth = "legacy",
-                company = VismaProperties.Company(byTenant = emptyMap()),
+                tenants =
+                    mapOf(
+                        "novari-no" to
+                            VismaProperties.Tenant(
+                                registrationId = "visma",
+                                baseUrl = "http://localhost",
+                                legacyAuth = "legacy",
+                                company = "123",
+                            ),
+                    ),
             )
-        val restClient = RestClient.builder().baseUrl(missingProps.baseUrl).build()
         val localClient =
             VismaReskontroClient(
-                restClient = restClient,
+                restClientFactory = restClientFactory,
+                manager = manager,
                 props = missingProps,
                 supplierMapper = SupplierMapper(),
             )
@@ -135,15 +164,12 @@ class VismaReskontroClientTest {
     fun `getCustomerSupplierByIdentifier fails when company mapping missing`() {
         val missingProps =
             VismaProperties(
-                registrationId = "visma",
-                baseUrl = "http://localhost",
-                legacyAuth = "legacy",
-                company = VismaProperties.Company(byTenant = emptyMap()),
+                tenants = emptyMap(),
             )
-        val restClient = RestClient.builder().baseUrl(missingProps.baseUrl).build()
         val localClient =
             VismaReskontroClient(
-                restClient = restClient,
+                restClientFactory = restClientFactory,
+                manager = manager,
                 props = missingProps,
                 supplierMapper = SupplierMapper(),
             )
@@ -228,5 +254,27 @@ class VismaReskontroClientTest {
         )
 
         server.verify()
+    }
+
+    private fun authorizedClient(): OAuth2AuthorizedClient {
+        val clientRegistration =
+            ClientRegistration
+                .withRegistrationId("visma")
+                .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+                .tokenUri("https://token")
+                .clientId("clientId")
+                .clientSecret("clientSecret")
+                .build()
+
+        return OAuth2AuthorizedClient(
+            clientRegistration,
+            "visma",
+            OAuth2AccessToken(
+                OAuth2AccessToken.TokenType.BEARER,
+                "access-token",
+                Instant.now(),
+                Instant.now().plusSeconds(60),
+            ),
+        )
     }
 }

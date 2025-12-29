@@ -3,36 +3,46 @@ spring:
         oauth2:
             client:
                 registration:
-                    visma:
+                    local-visma:
                         client-id: "client-id"
                         client-secret: "client-secret"
                         authorization-grant-type: client_credentials
 
-                    servicenow:
+                    local-servicenow:
                         client-id: "client-id"
                         client-secret: "client-secret"
                         authorization-grant-type: password
 
                 provider:
-                  visma:
+                  local-visma:
                       token-uri: "https://localhost"
 
-                  servicenow:
+                  local-servicenow:
                       token-uri: "https://localhost"
 
     kafka:
         bootstrap-servers: localhost:9092
 
 adapter:
+    supplier:
+        by-org-no:
+            999999999: novari-no
+
+        by-tenant:
+            novari-no: visma
+
     adapters:
         visma:
-            registration-id: "local-visma"
-            base-url: ""
-            legacy-auth: ""
+            tenants:
+                novari-no:
+                    registration-id: "local-visma"
+                    base-url: "https://example.com"
+                    legacy-auth: "YWJjZGVmZ2hpCg=="
+                    company: "29"
 
         servicenow:
             registration-id: "local-servicenow"
-            base-url: ""
+            base-url: "https://example.com"
             oauth2:
                 username: "username"
                 password: "password"

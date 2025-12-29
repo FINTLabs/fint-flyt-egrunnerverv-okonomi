@@ -8,6 +8,7 @@ import no.novari.flyt.egrunnerverv.okonomi.domain.model.Supplier
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.SupplierIdentity
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.TenantId
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.config.VismaProperties
+import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.config.VismaRestClientFactory
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.error.VismaCreateSupplierException
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.error.VismaGetSupplierException
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.error.VismaIdentifierTooLongException
@@ -18,167 +19,169 @@ import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.model.V
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.model.VUXmlStoreResponse
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.http.MediaType
-import org.springframework.retry.annotation.Backoff
-import org.springframework.retry.annotation.Retryable
+import org.springframework.retry.support.RetryTemplate
+import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClient
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestClient
 import org.springframework.web.client.body
+import java.util.concurrent.ConcurrentHashMap
 
 @Service
 class VismaReskontroClient(
-    @param:Qualifier("vismaRestClient") private val restClient: RestClient,
+    private val restClientFactory: VismaRestClientFactory,
+    @param:Qualifier("vismaAuthorizedClientManager") private val manager: OAuth2AuthorizedClientManager,
     private val props: VismaProperties,
     private val supplierMapper: SupplierMapper,
     private val logger: KLogger = KotlinLogging.logger {},
 ) {
-    @Retryable(
-        maxAttemptsExpression = "\${adapter.adapters.visma.retry.max-attempts}",
-        backoff =
-            Backoff(
-                delayExpression = "\${adapter.adapters.visma.retry.initial-interval-ms}",
-                maxDelayExpression = "10000",
-            ),
-    )
+    private val restClients = ConcurrentHashMap<TenantId, RestClient>()
+    private val retryTemplates = ConcurrentHashMap<TenantId, RetryTemplate>()
+
     fun getCustomerSupplierByIdentifier(
         supplierIdentity: SupplierIdentity,
         tenantId: TenantId,
     ): Supplier? {
-        logGetCustomerSupplierByIdentifier(supplierIdentity, tenantId)
+        return executeWithRetry(tenantId) { tenant ->
+            logGetCustomerSupplierByIdentifier(supplierIdentity, tenantId)
 
-        validateIdentifierLength(supplierIdentity, tenantId)
+            validateIdentifierLength(supplierIdentity, tenantId)
 
-        val company = getCompanyFromTenant(tenantId)
+            val restClient = getRestClient(tenantId, tenant)
+            val xmlResponse =
+                try {
+                    restClient
+                        .get()
+                        .uri { uriBuilder ->
+                            uriBuilder
+                                .path("/erp_ws/oauth/reskontro/${tenant.company}/0")
+                                .queryParam("fnr", supplierIdentity.value)
+                                .build()
+                        }.headers { headers ->
+                            val client = authorize(tenant)
+                            headers.setBearerAuth(client.accessToken.tokenValue)
+                            headers.add("Legacy-Auth", tenant.legacyAuth)
+                        }.accept(MediaType.TEXT_XML)
+                        .retrieve()
+                        .body<VUXml>()
+                        ?: throw VismaGetSupplierException(tenantId)
+                } catch (e: Exception) {
+                    logger.atError {
+                        message = "Klarte ikke å hente supplier fra Visma"
+                        arguments =
+                            arrayOf(
+                                kv("supplierIdentity", supplierIdentity.toMaskedLogMap()),
+                                kv("tenantId", tenantId),
+                                kv("cause", e),
+                            )
+                    }
+                    if (e is VismaGetSupplierException) {
+                        throw e
+                    }
 
-        val xmlResponse =
-            try {
-                restClient
-                    .get()
-                    .uri { uriBuilder ->
-                        uriBuilder
-                            .path("/erp_ws/oauth/reskontro/$company/0")
-                            .queryParam("fnr", supplierIdentity.value)
-                            .build()
-                    }.accept(MediaType.TEXT_XML)
-                    .retrieve()
-                    .body<VUXml>()
-                    ?: throw VismaGetSupplierException(tenantId)
-            } catch (e: Exception) {
-                logger.atError {
-                    message = "Klarte ikke å hente supplier fra Visma"
-                    arguments =
-                        arrayOf(
-                            kv("supplierIdentity", supplierIdentity.toMaskedLogMap()),
-                            kv("tenantId", tenantId),
-                            kv("cause", e),
-                        )
+                    throw VismaGetSupplierException(tenantId)
                 }
-                if (e is VismaGetSupplierException) {
-                    throw e
-                }
 
-                throw VismaGetSupplierException(tenantId)
-            }
-
-        return supplierMapper.mapSingleSupplier(xmlResponse)
+            supplierMapper.mapSingleSupplier(xmlResponse)
+        }
     }
 
-    @Retryable(
-        maxAttemptsExpression = "\${adapter.adapters.visma.retry.max-attempts}",
-        backoff =
-            Backoff(
-                delayExpression = "\${adapter.adapters.visma.retry.initial-interval-ms}",
-                maxDelayExpression = "10000",
-            ),
-    )
     fun createCustomerSupplier(
         supplier: Supplier,
         supplierIdentity: SupplierIdentity,
         tenantId: TenantId,
     ) {
-        validateIdentifierLength(supplierIdentity, tenantId)
+        executeWithRetry(tenantId) { tenant ->
+            validateIdentifierLength(supplierIdentity, tenantId)
 
-        val company = getCompanyFromTenant(tenantId)
-        val supplierType = SupplierType.LEVERANDOR // FIXME: Bestemmes av hvert fylke
+            val restClient = getRestClient(tenantId, tenant)
+            val supplierType = SupplierType.LEVERANDOR // FIXME: Bestemmes av hvert fylke
 
-        val requestBody =
-            supplierMapper.mapToVismaRequest(
-                supplier = supplier,
-                supplierIdentity = supplierIdentity,
-                company = company,
-                division = DIVISION,
-                type = supplierType,
-            )
+            val requestBody =
+                supplierMapper.mapToVismaRequest(
+                    supplier = supplier,
+                    supplierIdentity = supplierIdentity,
+                    company = tenant.company,
+                    division = DIVISION,
+                    type = supplierType,
+                )
 
-        val response =
-            try {
-                restClient
-                    .post()
-                    .uri("/erp_ws/oauth/reskontro")
-                    .contentType(MediaType.APPLICATION_XML)
-                    .accept(MediaType.TEXT_XML)
-                    .body(requestBody)
-                    .retrieve()
-                    .body<VUXmlStoreResponse>()
-                    ?: throw VismaCreateSupplierException(tenantId)
-            } catch (e: Exception) {
-                logger.atError {
-                    message = "klarte ikke å opprette leverandør i Visma"
-                    arguments =
-                        arrayOf(
-                            kv("supplier", supplier.toMaskedLogMap()),
-                            kv("supplierIdentity", supplierIdentity.toMaskedLogMap()),
-                            kv("tenant", tenantId.id),
-                            kv("cause", e),
-                        )
-                }
-                if (e is VismaCreateSupplierException) {
-                    throw e
-                }
-                throw VismaCreateSupplierException(tenantId)
-            }
-
-        val result = response.customerSuppliers
-
-        when {
-            result.stored == "true" -> {
-                logger.atInfo {
-                    message = "Leverandør opprettet i Visma"
-                    arguments =
-                        arrayOf(
-                            kv("leverandør", supplier.toMaskedLogMap()),
-                            kv("supplierIdentity", supplierIdentity.toMaskedLogMap()),
-                            kv("tenant", tenantId.id),
-                            kv("result", result),
-                        )
-                }
-            }
-
-            result.updated == "true" -> {
-                logger.atInfo {
-                    message = "Leverandør oppdatert i Visma"
-                    arguments =
-                        arrayOf(
-                            kv("leverandør", supplier.toMaskedLogMap()),
-                            kv("supplierIdentity", supplierIdentity.toMaskedLogMap()),
-                            kv("tenant", tenantId.id),
-                            kv("result", result),
-                        )
-                }
-            }
-
-            else -> {
-                logger.atError {
-                    message = "Kunne ikke opprette eller oppdatere leverandør i Visma"
-                    arguments =
-                        arrayOf(
-                            kv("leverandør", supplier.toMaskedLogMap()),
-                            kv("supplierIdentity", supplierIdentity.toMaskedLogMap()),
-                            kv("tenant", tenantId.id),
-                            kv("result", result),
-                        )
+            val response =
+                try {
+                    restClient
+                        .post()
+                        .uri("/erp_ws/oauth/reskontro")
+                        .headers { headers ->
+                            val client = authorize(tenant)
+                            headers.setBearerAuth(client.accessToken.tokenValue)
+                            headers.add("Legacy-Auth", tenant.legacyAuth)
+                        }.contentType(MediaType.APPLICATION_XML)
+                        .accept(MediaType.TEXT_XML)
+                        .body(requestBody)
+                        .retrieve()
+                        .body<VUXmlStoreResponse>()
+                        ?: throw VismaCreateSupplierException(tenantId)
+                } catch (e: Exception) {
+                    logger.atError {
+                        message = "klarte ikke å opprette leverandør i Visma"
+                        arguments =
+                            arrayOf(
+                                kv("supplier", supplier.toMaskedLogMap()),
+                                kv("supplierIdentity", supplierIdentity.toMaskedLogMap()),
+                                kv("tenant", tenantId.id),
+                                kv("cause", e),
+                            )
+                    }
+                    if (e is VismaCreateSupplierException) {
+                        throw e
+                    }
+                    throw VismaCreateSupplierException(tenantId)
                 }
 
-                throw VismaCreateSupplierException(tenantId)
+            val result = response.customerSuppliers
+
+            when {
+                result.stored == "true" -> {
+                    logger.atInfo {
+                        message = "Leverandør opprettet i Visma"
+                        arguments =
+                            arrayOf(
+                                kv("leverandør", supplier.toMaskedLogMap()),
+                                kv("supplierIdentity", supplierIdentity.toMaskedLogMap()),
+                                kv("tenant", tenantId.id),
+                                kv("result", result),
+                            )
+                    }
+                }
+
+                result.updated == "true" -> {
+                    logger.atInfo {
+                        message = "Leverandør oppdatert i Visma"
+                        arguments =
+                            arrayOf(
+                                kv("leverandør", supplier.toMaskedLogMap()),
+                                kv("supplierIdentity", supplierIdentity.toMaskedLogMap()),
+                                kv("tenant", tenantId.id),
+                                kv("result", result),
+                            )
+                    }
+                }
+
+                else -> {
+                    logger.atError {
+                        message = "Kunne ikke opprette eller oppdatere leverandør i Visma"
+                        arguments =
+                            arrayOf(
+                                kv("leverandør", supplier.toMaskedLogMap()),
+                                kv("supplierIdentity", supplierIdentity.toMaskedLogMap()),
+                                kv("tenant", tenantId.id),
+                                kv("result", result),
+                            )
+                    }
+
+                    throw VismaCreateSupplierException(tenantId)
+                }
             }
         }
     }
@@ -197,17 +200,6 @@ class VismaReskontroClient(
         }
     }
 
-    private fun getCompanyFromTenant(tenantId: TenantId): String {
-        return props.company.byTenant[tenantId.id]
-            ?: run {
-                logger.atWarn {
-                    message = "Fant ingen selskaps-mapping for tenant"
-                    arguments = arrayOf(kv("tenant", tenantId))
-                }
-                throw VismaTenantToCompanyException(tenantId)
-            }
-    }
-
     private fun validateIdentifierLength(
         identity: SupplierIdentity,
         tenantId: TenantId,
@@ -215,6 +207,61 @@ class VismaReskontroClient(
         if (identity.value.length >= MAX_IDENTIFIER_LENGTH) {
             throw VismaIdentifierTooLongException(tenantId)
         }
+    }
+
+    private fun authorize(tenant: VismaProperties.Tenant): OAuth2AuthorizedClient {
+        val auth =
+            OAuth2AuthorizeRequest
+                .withClientRegistrationId(tenant.registrationId)
+                .principal(tenant.registrationId)
+                .build()
+
+        return manager.authorize(auth)
+            ?: error("Autorisasjon mot Visma feilet. Sjekk OAuth2-konfigurasjonen.")
+    }
+
+    private fun getTenantConfig(tenantId: TenantId): VismaProperties.Tenant {
+        return props.tenants[tenantId.id]
+            ?: run {
+                logger.atWarn {
+                    message = "Fant ingen Visma-konfig for tenant"
+                    arguments = arrayOf(kv("tenant", tenantId))
+                }
+                throw VismaTenantToCompanyException(tenantId)
+            }
+    }
+
+    private fun getRestClient(
+        tenantId: TenantId,
+        tenant: VismaProperties.Tenant,
+    ): RestClient {
+        val timeouts = tenant.timeouts ?: props.timeouts
+        return restClients.computeIfAbsent(tenantId) {
+            restClientFactory.create(tenant.baseUrl, timeouts)
+        }
+    }
+
+    private fun <T> executeWithRetry(
+        tenantId: TenantId,
+        action: (VismaProperties.Tenant) -> T,
+    ): T {
+        val tenant = getTenantConfig(tenantId)
+        val retry = tenant.retry ?: props.retry
+        val template =
+            retryTemplates.computeIfAbsent(tenantId) {
+                RetryTemplate
+                    .builder()
+                    .maxAttempts(retry.maxAttempts)
+                    .exponentialBackoff(retry.initialIntervalMs, retry.multiplier, retry.maxIntervalMs)
+                    .notRetryOn(
+                        listOf(
+                            VismaIdentifierTooLongException::class.java,
+                            VismaTenantToCompanyException::class.java,
+                        ),
+                    ).build()
+            }
+
+        return template.execute<T, Exception> { action(tenant) }
     }
 
     companion object {

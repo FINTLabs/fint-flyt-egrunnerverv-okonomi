@@ -5,24 +5,28 @@ import java.time.Duration
 
 @ConfigurationProperties("adapter.adapters.visma")
 data class VismaProperties(
-    val registrationId: String,
-    val baseUrl: String,
-    val legacyAuth: String,
-    val company: Company,
+    val tenants: Map<String, Tenant> = emptyMap(),
     val timeouts: Timeouts = Timeouts(),
     val retry: Retry = Retry(),
 ) {
-    data class Company(
-        val byTenant: Map<String, String>,
+    data class Tenant(
+        val registrationId: String,
+        val baseUrl: String,
+        val legacyAuth: String,
+        val company: String,
+        val timeouts: Timeouts? = null,
+        val retry: Retry? = null,
     )
 
     data class Timeouts(
         val connect: Duration = Duration.ofSeconds(5),
-        val read: Duration = Duration.ofSeconds(30),
+        val read: Duration = Duration.ofSeconds(60),
     )
 
     data class Retry(
-        val maxAttempts: Int = 5,
+        val maxAttempts: Int = 10,
         val initialIntervalMs: Long = 500,
+        val multiplier: Double = 2.0,
+        val maxIntervalMs: Long = 10000,
     )
 }

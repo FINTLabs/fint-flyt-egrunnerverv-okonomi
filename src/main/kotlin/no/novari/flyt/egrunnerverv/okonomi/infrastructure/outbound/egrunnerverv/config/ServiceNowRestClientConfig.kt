@@ -6,6 +6,7 @@ import org.springframework.boot.http.client.ClientHttpRequestFactoryBuilder
 import org.springframework.boot.http.client.ClientHttpRequestFactorySettings
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.retry.support.RetryTemplate
 import org.springframework.security.oauth2.client.AuthorizedClientServiceOAuth2AuthorizedClientManager
 import org.springframework.security.oauth2.client.OAuth2AuthorizationContext
 import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest
@@ -18,6 +19,18 @@ import org.springframework.web.client.RestClient
 @Configuration
 @EnableConfigurationProperties(ServiceNowProperties::class)
 class ServiceNowRestClientConfig {
+    @Bean("serviceNowRetryTemplate")
+    fun serviceNowRetryTemplate(props: ServiceNowProperties): RetryTemplate {
+        return RetryTemplate
+            .builder()
+            .maxAttempts(props.retry.maxAttempts)
+            .exponentialBackoff(
+                props.retry.initialIntervalMs,
+                props.retry.multiplier,
+                props.retry.maxIntervalMs,
+            ).build()
+    }
+
     @Bean("serviceNowAuthorizedClientManager")
     fun serviceNowAuthorizedClientManager(
         clientRegistrationRepository: ClientRegistrationRepository,

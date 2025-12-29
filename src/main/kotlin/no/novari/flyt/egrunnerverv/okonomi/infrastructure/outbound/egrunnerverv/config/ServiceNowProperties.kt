@@ -22,7 +22,9 @@ data class ServiceNowProperties(
     )
 
     data class Retry(
-        val maxAttempts: Int = 5,
+        val maxAttempts: Int = 10,
         val initialIntervalMs: Long = 500,
+        val multiplier: Double = 2.0,
+        val maxIntervalMs: Long = 10000,
     )
 }
