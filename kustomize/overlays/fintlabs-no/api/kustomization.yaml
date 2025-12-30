@@ -53,4 +53,4 @@ patches:
 
         target:
             kind: OnePasswordItem
-            name: novari-flyt-egrunnerverv-dispatch-oauth2-client
+            name: egrunnerverv-okonomi-visma-oauth2-client

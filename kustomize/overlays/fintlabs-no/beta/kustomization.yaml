@@ -18,6 +18,10 @@ patches:
                     name: ADAPTER_ADAPTERS_SERVICENOW_BASE_URL
                     value: https://vigoikstest.service-now.com/api/now/table
 
+        target:
+            kind: Application
+            name: fint-flyt-egrunnerverv-okonomi
+
     -   patch: |-
             -   op: replace
                 path: "/spec/itemPath"
@@ -34,4 +38,4 @@ patches:
 
         target:
             kind: OnePasswordItem
-            name: novari-flyt-egrunnerverv-dispatch-oauth2-client
+            name: egrunnerverv-okonomi-visma-oauth2-client
