@@ -44,3 +44,4 @@
 
 ## Arkitektur
 Se [`ARCHITECTURE.md`](ARCHITECTURE.md) for en mer detaljert gjennomgang (lagdeling, flyt, og diagrammer).
+
