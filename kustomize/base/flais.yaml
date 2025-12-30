@@ -14,7 +14,7 @@ metadata:
 
 spec:
     orgId: fintlabs.no
-    image: ghcr.io/fintlabs/fint-flyt-egrunnerverv-okonomi:latest
+    image: ghcr.io/fintlabs/fint-flyt-egrunnerverv-okonomi:sha-0000000
     imagePullPolicy: Always
     url:
         hostname: flyt.vigo.no
