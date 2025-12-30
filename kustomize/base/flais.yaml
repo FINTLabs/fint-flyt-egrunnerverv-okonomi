@@ -1,0 +1,63 @@
+apiVersion: fintlabs.no/v1alpha1
+kind: Application
+metadata:
+    name: fint-flyt-egrunnerverv-okonomi
+    namespace: fintlabs-no
+    labels:
+        app.kubernetes.io/name: fint-flyt-egrunnerverv-okonomi
+        app.kubernetes.io/instance: fint-flyt-egrunnerverv-okonomi_fintlabs_no
+        app.kubernetes.io/version: latest
+        app.kubernetes.io/component: backend
+        app.kubernetes.io/part-of: fint-flyt
+        fintlabs.no/team: flyt
+        fintlabs.no/org-id: fintlabs.no
+
+spec:
+    orgId: fintlabs.no
+    image: ghcr.io/fintlabs/fint-flyt-egrunnerverv-okonomi:latest
+    imagePullPolicy: Always
+    url:
+        hostname: flyt.vigo.no
+        basePath: /beta/fintlabs-no
+    ingress:
+        enabled: true
+        basePath: /beta/fintlabs-no/api
+
+    envFrom:
+        -   secretRef:
+            name: novari-flyt-egrunnerverv-dispatch-oauth2-client
+
+    env:
+        # eGrunnerverv / ServiceNow
+        -   name: ADAPTER_ADAPTERS_SERVICENOW_REGISTRATION_ID
+            value: servicenow
+        -   name: ADAPTER_ADAPTERS_SERVICENOW_OAUTH2_USERNAME
+            valueFrom:
+                secretKeyRef:
+                    name: novari-flyt-egrunnerverv-dispatch-oauth2-client
+                    key: novari.flyt.egrunnerverv.dispatch.username
+        -   name: ADAPTER_ADAPTERS_SERVICENOW_OAUTH2_PASSWORD
+            valueFrom:
+                secretKeyRef:
+                    name: novari-flyt-egrunnerverv-dispatch-oauth2-client
+                    key: novari.flyt.egrunnerverv.dispatch.password
+        -   name: SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_SERVICENOW_CLIENT_ID
+            valueFrom:
+                secretKeyRef:
+                    name: novari-flyt-egrunnerverv-dispatch-oauth2-client
+                    key: novari.flyt.egrunnerverv.dispatch.client-id
+        -   name: SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_SERVICENOW_CLIENT_SECRET
+            valueFrom:
+                secretKeyRef:
+                    name: novari-flyt-egrunnerverv-dispatch-oauth2-client
+                    key: novari.flyt.egrunnerverv.dispatch.client-secret
+        -   name: SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_SERVICENOW_AUTHORIZATION_GRANT_TYPE
+            value: password
+        -   name: SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_SERVICENOW_TOKEN_URI
+            value: https://vigoiks.service-now.com/oauth_token.do
+
+    observability:
+        metrics:
+            enabled: true
+            port: "8080"
+            path: '/beta/fintlabs-no/actuator/prometheus'

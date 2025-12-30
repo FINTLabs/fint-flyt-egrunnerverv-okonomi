@@ -1,0 +1,20 @@
+fint:
+    application-id: fint-flyt-egrunnerverv-okonomi
+    org-id: novari.no
+
+spring:
+    application:
+        name: flyt.egrunnerverv.okonomi
+
+    threads:
+        virtual:
+            enabled: true
+
+    output:
+        ansi:
+            enabled: always
+
+    profiles:
+        include:
+            - flyt-web-resource-server
+            - flyt-kafka

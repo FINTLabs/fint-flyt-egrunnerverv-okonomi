@@ -1,0 +1,24 @@
+package no.novari.flyt.egrunnerverv.okonomi.infrastructure.inbound.web.error
+
+enum class ApiErrorCode(
+    val id: Int,
+) {
+    // Validerings-feil: 1000-1999
+    MISSING_FODSELSNUMMER_OR_ORGID(1001),
+    MULTIPLE_IDENTIFIERS(1002),
+    GENERIC_BAD_REQUEST(1003),
+    MISSING_ADAPTER_MAPPING(1004),
+    MISSING_GATEWAY_BEAN(1005),
+    IDENTIFIER_TOO_LONG(1006),
+    INVALID_ORGANIZATION_NUMBER(1007),
+
+    // Supplier-feil: 2000-2999
+    GENERIC_SUPPLIER_ERROR(2000),
+    GET_SUPPLIER_ERROR(2001),
+    CREATE_SUPPLIER_ERROR(2002),
+    TENANT_TO_COMPANY_ERROR(2003),
+    SERVICE_NOW_SYNC_ERROR(2004),
+
+    // Unknown
+    UNKNOWN_ERROR(9999),
+}

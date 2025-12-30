@@ -1,0 +1,11 @@
+spring:
+    kafka:
+        consumer:
+            group-id: ${fint.application-id}
+
+novari:
+    kafka:
+        application-id: ${fint.application-id}
+        topic:
+            domain-context: flyt
+            org-id: novari-no
