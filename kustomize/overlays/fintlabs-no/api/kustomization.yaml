@@ -40,7 +40,7 @@ patches:
     -   patch: |-
             -   op: replace
                 path: "/spec/itemPath"
-                value: "vaults/aks-api-vault/items/fint-flyt-egrunnerverv-gateway-out"
+                value: "vaults/aks-api-vault/items/novari-flyt-egrunnerverv-gateway-out"
 
         target:
             kind: OnePasswordItem
