@@ -25,7 +25,7 @@ spec:
 
     envFrom:
         -   secretRef:
-            name: novari-flyt-egrunnerverv-dispatch-oauth2-client
+                name: novari-flyt-egrunnerverv-dispatch-oauth2-client
 
     env:
         # eGrunnerverv / ServiceNow
