@@ -2,6 +2,7 @@ package no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.adapte
 
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.micrometer.core.instrument.MeterRegistry
 import net.logstash.logback.argument.StructuredArguments.kv
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.CreateSupplierException
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.GenericSupplierException
@@ -26,6 +27,7 @@ import org.springframework.stereotype.Component
 @Component("visma")
 class VismaSupplierAdapter(
     private val client: VismaReskontroClient,
+    private val meterRegistry: MeterRegistry,
     private val logger: KLogger = KotlinLogging.logger {},
 ) : SupplierGatewayPort {
     override fun getOrCreate(
@@ -33,10 +35,20 @@ class VismaSupplierAdapter(
         supplierIdentity: SupplierIdentity,
         tenantId: TenantId,
     ): SupplierSyncOutcome {
+        var phase = "lookup"
         try {
             val existingSupplier = client.getCustomerSupplierByIdentifier(supplierIdentity, tenantId)
 
             if (existingSupplier == null) {
+                meterRegistry
+                    .counter(
+                        "visma.lookup.count",
+                        "tenant",
+                        tenantId.id,
+                        "result",
+                        "not_found",
+                    ).increment()
+                phase = "create"
                 client.createCustomerSupplier(
                     supplier = supplier,
                     supplierIdentity = supplierIdentity,
@@ -49,8 +61,34 @@ class VismaSupplierAdapter(
                 return SupplierSyncOutcome(SupplierSyncResult.Created, createdSupplier)
             }
 
+            meterRegistry
+                .counter(
+                    "visma.lookup.count",
+                    "tenant",
+                    tenantId.id,
+                    "result",
+                    "found",
+                ).increment()
             return SupplierSyncOutcome(SupplierSyncResult.Updated, existingSupplier)
         } catch (vce: VismaClientException) {
+            if (phase == "lookup") {
+                meterRegistry
+                    .counter(
+                        "visma.lookup.count",
+                        "tenant",
+                        tenantId.id,
+                        "result",
+                        "error",
+                    ).increment()
+            }
+            meterRegistry
+                .counter(
+                    "visma.error.count",
+                    "tenant",
+                    tenantId.id,
+                    "exception",
+                    vce::class.simpleName ?: "unknown",
+                ).increment()
             when (vce) {
                 is VismaCreateSupplierException -> throw CreateSupplierException(vce)
                 is VismaGetSupplierException -> throw GetSupplierException(vce)
@@ -58,6 +96,24 @@ class VismaSupplierAdapter(
                 is VismaIdentifierTooLongException -> throw IdentifierTooLongException()
             }
         } catch (e: Exception) {
+            if (phase == "lookup") {
+                meterRegistry
+                    .counter(
+                        "visma.lookup.count",
+                        "tenant",
+                        tenantId.id,
+                        "result",
+                        "error",
+                    ).increment()
+            }
+            meterRegistry
+                .counter(
+                    "visma.error.count",
+                    "tenant",
+                    tenantId.id,
+                    "exception",
+                    e::class.simpleName ?: "unknown",
+                ).increment()
             logger.atError {
                 message = "Ukjent feil i kommunikasjonen med Visma-klienten"
                 arguments =

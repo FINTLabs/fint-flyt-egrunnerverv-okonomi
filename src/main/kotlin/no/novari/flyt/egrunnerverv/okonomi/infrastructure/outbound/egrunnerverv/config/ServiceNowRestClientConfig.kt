@@ -1,5 +1,8 @@
 package no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.egrunnerverv.config
 
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.Tags
+import no.novari.flyt.egrunnerverv.okonomi.infrastructure.metrics.RetryMetricsListener
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.http.client.ClientHttpRequestFactoryBuilder
@@ -20,15 +23,28 @@ import org.springframework.web.client.RestClient
 @EnableConfigurationProperties(ServiceNowProperties::class)
 class ServiceNowRestClientConfig {
     @Bean("serviceNowRetryTemplate")
-    fun serviceNowRetryTemplate(props: ServiceNowProperties): RetryTemplate {
-        return RetryTemplate
-            .builder()
-            .maxAttempts(props.retry.maxAttempts)
-            .exponentialBackoff(
-                props.retry.initialIntervalMs,
-                props.retry.multiplier,
-                props.retry.maxIntervalMs,
-            ).build()
+    fun serviceNowRetryTemplate(
+        props: ServiceNowProperties,
+        meterRegistry: MeterRegistry,
+    ): RetryTemplate {
+        val template =
+            RetryTemplate
+                .builder()
+                .maxAttempts(props.retry.maxAttempts)
+                .exponentialBackoff(
+                    props.retry.initialIntervalMs,
+                    props.retry.multiplier,
+                    props.retry.maxIntervalMs,
+                ).build()
+
+        template.registerListener(
+            RetryMetricsListener(
+                meterRegistry = meterRegistry,
+                tags = Tags.of("system", "servicenow", "tenant", "unknown"),
+            ),
+        )
+
+        return template
     }
 
     @Bean("serviceNowAuthorizedClientManager")

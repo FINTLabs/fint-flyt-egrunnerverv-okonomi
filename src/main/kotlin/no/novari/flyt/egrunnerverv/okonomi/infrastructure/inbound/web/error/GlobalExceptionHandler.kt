@@ -1,6 +1,7 @@
 package no.novari.flyt.egrunnerverv.okonomi.infrastructure.inbound.web.error
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.micrometer.core.instrument.MeterRegistry
 import net.logstash.logback.argument.StructuredArguments.kv
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.CreateSupplierException
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.DomainValidationException
@@ -23,7 +24,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
 
 @RestControllerAdvice
-class GlobalExceptionHandler {
+class GlobalExceptionHandler(
+    private val meterRegistry: MeterRegistry,
+) {
     private val logger = KotlinLogging.logger {}
 
     @ExceptionHandler(DomainValidationException::class)
@@ -34,6 +37,7 @@ class GlobalExceptionHandler {
                 is MultipleIdentifiersException -> ApiErrorCode.MULTIPLE_IDENTIFIERS
                 is IdentifierTooLongException -> ApiErrorCode.IDENTIFIER_TOO_LONG
             }
+        recordValidationError(apiErrorCode)
         return ResponseEntity
             .status(HttpStatus.BAD_REQUEST)
             .body(
@@ -50,6 +54,7 @@ class GlobalExceptionHandler {
             ex.bindingResult.allErrors.joinToString("; ") {
                 it.defaultMessage ?: "Ugyldig forespørsel. Se detaljer for feltfeil."
             }
+        recordValidationError(ApiErrorCode.GENERIC_BAD_REQUEST)
         return ResponseEntity
             .status(HttpStatus.BAD_REQUEST)
             .body(
@@ -62,6 +67,7 @@ class GlobalExceptionHandler {
 
     @ExceptionHandler(InvalidOrganizationNumberException::class)
     fun handleInvalidOrganizationNumber(ex: InvalidOrganizationNumberException): ResponseEntity<ErrorResponse> {
+        recordValidationError(ApiErrorCode.INVALID_ORGANIZATION_NUMBER)
         return ResponseEntity
             .status(HttpStatus.BAD_REQUEST)
             .body(
@@ -74,15 +80,17 @@ class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentTypeMismatchException::class)
     fun handleMethodArgumentTypeMismatch(ex: MethodArgumentTypeMismatchException): ResponseEntity<ErrorResponse> {
+        val apiErrorCode =
+            when (ex.rootCause) {
+                is InvalidOrganizationNumberException -> ApiErrorCode.INVALID_ORGANIZATION_NUMBER
+                else -> ApiErrorCode.GENERIC_BAD_REQUEST
+            }
+        recordValidationError(apiErrorCode)
         return ResponseEntity
             .status(HttpStatus.BAD_REQUEST)
             .body(
                 ErrorResponse(
-                    errorCode =
-                        when (ex.rootCause) {
-                            is InvalidOrganizationNumberException -> ApiErrorCode.INVALID_ORGANIZATION_NUMBER.id
-                            else -> ApiErrorCode.GENERIC_BAD_REQUEST.id
-                        },
+                    errorCode = apiErrorCode.id,
                     errorMessage = requireNotNull(ex.rootCause?.message ?: ex.cause?.message ?: ex.message),
                 ),
             )
@@ -90,6 +98,7 @@ class GlobalExceptionHandler {
 
     @ExceptionHandler(NoAdapterMappingException::class)
     fun handleNoAdapterMapping(ex: NoAdapterMappingException): ResponseEntity<ErrorResponse> {
+        recordTenantError(ApiErrorCode.MISSING_ADAPTER_MAPPING)
         return ResponseEntity
             .status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(
@@ -102,6 +111,7 @@ class GlobalExceptionHandler {
 
     @ExceptionHandler(MissingGatewayBeanException::class)
     fun handleMissingGatewayBean(ex: MissingGatewayBeanException): ResponseEntity<ErrorResponse> {
+        recordTenantError(ApiErrorCode.MISSING_GATEWAY_BEAN)
         return ResponseEntity
             .status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(
@@ -123,6 +133,7 @@ class GlobalExceptionHandler {
                 is TenantToCompanyException -> ApiErrorCode.TENANT_TO_COMPANY_ERROR
                 is ServiceNowSyncException -> ApiErrorCode.SERVICE_NOW_SYNC_ERROR
             }
+        recordSyncFailure(apiErrorCode)
         return ResponseEntity
             .status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(
@@ -142,6 +153,7 @@ class GlobalExceptionHandler {
                     kv("cause", ex.cause),
                 )
         }
+        recordSyncFailure(ApiErrorCode.UNKNOWN_ERROR)
         return ResponseEntity
             .status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(
@@ -150,5 +162,40 @@ class GlobalExceptionHandler {
                     errorMessage = "En uventet feil oppsto. Prøv igjen, eller kontakt FLYT hvis problemet fortsetter.",
                 ),
             )
+    }
+
+    private fun recordValidationError(apiErrorCode: ApiErrorCode) {
+        meterRegistry
+            .counter(
+                "supplier.validation.error.count",
+                "error_code",
+                apiErrorCode.id.toString(),
+            ).increment()
+        recordSyncFailure(apiErrorCode)
+    }
+
+    private fun recordTenantError(apiErrorCode: ApiErrorCode) {
+        meterRegistry
+            .counter(
+                "supplier.tenant.error.count",
+                "error_code",
+                apiErrorCode.id.toString(),
+            ).increment()
+        recordSyncFailure(apiErrorCode)
+    }
+
+    private fun recordSyncFailure(apiErrorCode: ApiErrorCode) {
+        meterRegistry
+            .counter(
+                "supplier.sync.count",
+                "tenant",
+                "unknown",
+                "identity_type",
+                "unknown",
+                "outcome",
+                "failed",
+                "error_code",
+                apiErrorCode.id.toString(),
+            ).increment()
     }
 }
