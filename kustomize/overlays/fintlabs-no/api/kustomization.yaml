@@ -17,10 +17,6 @@ patches:
                 value: "/api"
 
             -   op: replace
-                path: "/spec/url/basePath"
-                value: ""
-
-            -   op: replace
                 path: "/spec/observability/metrics/path"
                 value: "/actuator/prometheus"
 
@@ -33,6 +29,12 @@ patches:
             -   op: replace
                 path: "/spec/probes/startup/path"
                 value: "/actuator/health"
+
+            -   op: add
+                path: "/spec/env/-"
+                value:
+                    name: server.servlet.context-path
+                    value: "/"
 
             -   op: add
                 path: "/spec/env/-"
