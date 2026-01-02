@@ -28,10 +28,10 @@ spec:
     kafka:
         enabled: true
         acls:
-            - permission: admin
-              topic: 'fintlabs-no.flyt.*'
+            -   permission: admin
+                topic: 'fintlabs-no.flyt.*'
 
-        envFrom:
+    envFrom:
         -   secretRef:
                 name: novari-flyt-egrunnerverv-dispatch-oauth2-client
         -   secretRef:
