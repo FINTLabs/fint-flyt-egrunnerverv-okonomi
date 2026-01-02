@@ -1,10 +1,12 @@
 package no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.egrunnerverv.service
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.ExternalSupplierId
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.ServiceNowSysId
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.Supplier
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.SupplierSyncContext
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.SupplierSyncOutcome
+import no.novari.flyt.egrunnerverv.okonomi.domain.model.TenantId
 import no.novari.flyt.egrunnerverv.okonomi.domain.ports.out.SupplierSyncResult
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.egrunnerverv.error.MissingExternalIdException
 import org.junit.jupiter.api.BeforeEach
@@ -23,6 +25,7 @@ import kotlin.test.assertFailsWith
 class ServiceNowClientTest {
     private lateinit var server: MockRestServiceServer
     private lateinit var client: ServiceNowClient
+    private val tenantId = TenantId("novari-no")
 
     @BeforeEach
     fun setup() {
@@ -36,6 +39,7 @@ class ServiceNowClientTest {
                     .maxAttempts(1)
                     .fixedBackoff(1)
                     .build(),
+                SimpleMeterRegistry(),
             )
     }
 
@@ -72,7 +76,7 @@ class ServiceNowClientTest {
                 ),
             )
 
-        client.syncSupplier(outcome, context)
+        client.syncSupplier(outcome, context, tenantId)
 
         server.verify()
     }
@@ -83,7 +87,7 @@ class ServiceNowClientTest {
         val context = SupplierSyncContext(ServiceNowSysId("sys-1"))
 
         assertFailsWith<MissingExternalIdException> {
-            client.syncSupplier(outcome, context)
+            client.syncSupplier(outcome, context, tenantId)
         }
     }
 

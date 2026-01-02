@@ -1,5 +1,6 @@
 package no.novari.flyt.egrunnerverv.okonomi.infrastructure.inbound.web.error
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.CreateSupplierException
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.GenericSupplierException
 import no.novari.flyt.egrunnerverv.okonomi.domain.error.GetSupplierException
@@ -23,7 +24,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
 class GlobalExceptionHandlerTest {
-    private val handler = GlobalExceptionHandler()
+    private val handler = GlobalExceptionHandler(SimpleMeterRegistry())
 
     @Test
     fun `handleDomainValidationException maps missing identifier`() {

@@ -34,6 +34,8 @@ dependencies {
 
     implementation("no.novari:flyt-web-resource-server:2.0.0")
 
+    implementation("io.micrometer:micrometer-registry-prometheus")
+
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-xml")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
 

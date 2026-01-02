@@ -31,6 +31,7 @@ class ServiceNowAdapter(
             client.syncSupplier(
                 supplierSyncOutcome = supplierSyncOutcome,
                 syncContext = syncContext,
+                tenantId = tenantId,
             )
         } catch (sne: ServiceNowClientException) {
             when (sne) {

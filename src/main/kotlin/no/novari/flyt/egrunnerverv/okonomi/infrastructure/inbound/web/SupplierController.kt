@@ -1,5 +1,6 @@
 package no.novari.flyt.egrunnerverv.okonomi.infrastructure.inbound.web
 
+import io.micrometer.core.instrument.MeterRegistry
 import jakarta.validation.Valid
 import no.novari.flyt.egrunnerverv.okonomi.application.supplier.SyncSupplierUseCase
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.SupplierIdentity
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController
 class SupplierController(
     private val syncSupplierUseCase: SyncSupplierUseCase,
     private val orgNoConverter: OrgNoConverter,
+    private val meterRegistry: MeterRegistry,
 ) {
     @PostMapping
     fun getOrCreateSupplier(
@@ -27,13 +29,36 @@ class SupplierController(
     ): ResponseEntity<Void> {
         val tenantId = orgNoConverter.convert(orgNo)
         val syncContext = SupplierRequestMapper.toSyncContext(supplierRequest)
+        val identityType =
+            when {
+                supplierRequest.fodselsNummer != null -> "fnr"
+                supplierRequest.orgId != null -> "org"
+                else -> "unknown"
+            }
         val syncOutcome =
             syncSupplierUseCase.getOrCreate(
-                supplier = SupplierRequestMapper.toDomainSupplier(payload = supplierRequest),
+                supplier = SupplierRequestMapper.toDomainSupplier(supplierRequest),
                 syncContext = syncContext,
                 supplierIdentity = SupplierIdentity.from(supplierRequest.fodselsNummer, supplierRequest.orgId),
                 tenantId = tenantId,
             )
+
+        val outcomeTag =
+            when (syncOutcome.result) {
+                SupplierSyncResult.Created -> "created"
+                SupplierSyncResult.Updated -> "updated"
+            }
+
+        meterRegistry
+            .counter(
+                "supplier.sync.count",
+                "tenant",
+                tenantId.id,
+                "identity_type",
+                identityType,
+                "outcome",
+                outcomeTag,
+            ).increment()
 
         return when (syncOutcome.result) {
             SupplierSyncResult.Created -> ResponseEntity.ok().build()

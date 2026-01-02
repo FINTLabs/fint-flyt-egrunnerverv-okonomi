@@ -33,7 +33,7 @@ class ServiceNowAdapterTest {
             )
         val context = SupplierSyncContext(ServiceNowSysId("sys-1"))
 
-        every { client.syncSupplier(outcome, context) } throws
+        every { client.syncSupplier(outcome, context, tenantId) } throws
             ServiceNowPatchConsumerException(context.serviceNowSysId)
 
         val ex =
@@ -58,7 +58,7 @@ class ServiceNowAdapterTest {
             )
         val context = SupplierSyncContext(ServiceNowSysId("sys-1"))
 
-        every { client.syncSupplier(outcome, context) } throws RuntimeException("boom")
+        every { client.syncSupplier(outcome, context, tenantId) } throws RuntimeException("boom")
 
         val ex =
             assertFailsWith<GenericSupplierException> {

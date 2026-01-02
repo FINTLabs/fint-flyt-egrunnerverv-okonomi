@@ -2,6 +2,7 @@ package no.novari.flyt.egrunnerverv.okonomi.infrastructure.outbound.visma.servic
 
 import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.mockk.every
 import io.mockk.mockk
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.ExternalSupplierId
@@ -81,6 +82,7 @@ class VismaReskontroClientTest {
                 manager = manager,
                 props = props,
                 supplierMapper = SupplierMapper(),
+                meterRegistry = SimpleMeterRegistry(),
             )
     }
 
@@ -150,6 +152,7 @@ class VismaReskontroClientTest {
                 manager = manager,
                 props = missingProps,
                 supplierMapper = SupplierMapper(),
+                meterRegistry = SimpleMeterRegistry(),
             )
 
         assertFailsWith<VismaIdentifierTooLongException> {
@@ -172,6 +175,7 @@ class VismaReskontroClientTest {
                 manager = manager,
                 props = missingProps,
                 supplierMapper = SupplierMapper(),
+                meterRegistry = SimpleMeterRegistry(),
             )
 
         assertFailsWith<VismaTenantToCompanyException> {

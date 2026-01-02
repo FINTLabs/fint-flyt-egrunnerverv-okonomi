@@ -1,5 +1,6 @@
 package no.novari.flyt.egrunnerverv.okonomi.application.supplier
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.mockk.every
 import io.mockk.justRun
 import io.mockk.mockk
@@ -22,7 +23,8 @@ class SyncSupplierServiceTest {
     private val resolver = mockk<TenantGatewayResolver>()
     private val egrunnervervPort = mockk<EgrunnervervPort>()
     private val gateway = mockk<SupplierGatewayPort>()
-    private val service = SyncSupplierService(resolver, egrunnervervPort)
+    private val meterRegistry = SimpleMeterRegistry()
+    private val service = SyncSupplierService(resolver, egrunnervervPort, meterRegistry)
 
     private val supplier =
         Supplier(

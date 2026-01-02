@@ -1,6 +1,8 @@
 package no.novari.flyt.egrunnerverv.okonomi.infrastructure.inbound.web
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import no.novari.flyt.egrunnerverv.okonomi.application.supplier.SyncSupplierUseCase
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.Supplier
 import no.novari.flyt.egrunnerverv.okonomi.domain.model.SupplierIdentity
@@ -52,6 +54,9 @@ class SupplierControllerTest
 
         @TestConfiguration
         class StubConfig {
+            @Bean
+            fun meterRegistry(): MeterRegistry = SimpleMeterRegistry()
+
             @Bean
             fun syncSupplierUseCase(): SyncSupplierUseCase {
                 return object : SyncSupplierUseCase {
