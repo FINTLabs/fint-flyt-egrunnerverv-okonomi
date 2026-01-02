@@ -26,7 +26,8 @@ spec:
     envFrom:
         -   secretRef:
                 name: novari-flyt-egrunnerverv-dispatch-oauth2-client
-
+        -   secretRef:
+                name: egrunnerverv-okonomi-visma-oauth2-client
     env:
         # eGrunnerverv / ServiceNow
         -   name: ADAPTER_ADAPTERS_SERVICENOW_REGISTRATION_ID
