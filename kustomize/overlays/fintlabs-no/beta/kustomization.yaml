@@ -12,6 +12,28 @@ labels:
 
 patches:
     -   patch: |-
+            -   op: replace
+                path: "/spec/ingress/basePath"
+                value: "/beta/api"
+
+            -   op: replace
+                path: "/spec/url/basePath"
+                value: "/beta"
+
+            -   op: replace
+                path: "/spec/observability/metrics/path"
+                value: "/beta/actuator/prometheus"
+
+            -   op: replace
+                path: "/spec/probes/readiness/path"
+                value: "/beta/actuator/health"
+            -   op: replace
+                path: "/spec/probes/liveness/path"
+                value: "/beta/actuator/health"
+            -   op: replace
+                path: "/spec/probes/startup/path"
+                value: "/beta/actuator/health"
+
             -   op: add
                 path: "/spec/env/-"
                 value:
