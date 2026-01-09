@@ -266,7 +266,7 @@ class VismaReskontroClient(
         identity: SupplierIdentity,
         tenantId: TenantId,
     ) {
-        if (identity.value.length >= MAX_IDENTIFIER_LENGTH) {
+        if (identity.value.length > MAX_IDENTIFIER_LENGTH) {
             throw VismaIdentifierTooLongException(tenantId)
         }
     }
@@ -338,6 +338,6 @@ class VismaReskontroClient(
 
     companion object {
         private const val DIVISION = "0"
-        private const val MAX_IDENTIFIER_LENGTH = 12
+        private const val MAX_IDENTIFIER_LENGTH = 11
     }
 }
