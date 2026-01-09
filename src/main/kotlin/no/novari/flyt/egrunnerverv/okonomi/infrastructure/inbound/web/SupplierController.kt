@@ -8,6 +8,7 @@ import no.novari.flyt.egrunnerverv.okonomi.domain.ports.out.SupplierSyncResult
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.inbound.web.config.OrgNoConverter
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.inbound.web.dto.SupplierRequest
 import no.novari.flyt.egrunnerverv.okonomi.infrastructure.inbound.web.mapper.SupplierRequestMapper
+import no.novari.flyt.webresourceserver.UrlPaths.EXTERNAL_API
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -16,7 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/api/v1/egrunnerverv/okonomi/org/{orgNo}/supplier")
+@RequestMapping(EXTERNAL_API + "/v1/egrunnerverv/okonomi/org/{orgNo}/supplier")
 class SupplierController(
     private val syncSupplierUseCase: SyncSupplierUseCase,
     private val orgNoConverter: OrgNoConverter,
